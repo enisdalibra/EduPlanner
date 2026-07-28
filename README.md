@@ -79,7 +79,7 @@ EduPlanner is local-first and does not require a backend. The available storage 
 | --- | --- | --- | --- |
 | Application data | IndexedDB in the current browser profile and origin | Normal day-to-day use | Clearing site/browser storage can permanently remove the data. |
 | Downloaded JSON backup | A file saved by the user | Durable backup and transfer between compatible EduPlanner origins | The file can contain sensitive educational records and must be stored securely. |
-| Local mock provider | `localStorage` in the current browser profile and origin | Development and demonstrations | It is not cloud storage, is unavailable from another browser/origin/device, and can be deleted with browser storage. |
+| Local mock provider | `localStorage` in the current browser profile and origin | Development and demonstrations | Its five-minute timer runs only while the app is open and replaces one mock copy; it is not cloud storage and can be deleted with browser data. |
 | Remote cloud backup | Not available | — | No data is uploaded to a remote backup service. |
 
 The **Export Data** shortcut on the Dashboard and **Download Backup** in

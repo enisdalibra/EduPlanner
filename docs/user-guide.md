@@ -194,9 +194,13 @@ Recommended times to back up include:
 - before moving to a different EduPlanner URL; and
 - before an application upgrade or deployment change.
 
-The local mock provider is a development/demo simulation stored in
-`localStorage`. It is not remote cloud storage and is not a replacement for a
-downloaded file backup.
+The local mock provider is a development/demo simulation that keeps one
+replaceable `localStorage` copy in the same browser and origin. Its optional
+five-minute timer runs only while EduPlanner is open, and enabling it does not
+create an immediate copy; **Create Mock Backup** does. It is not remote cloud
+storage or a replacement for a downloaded file backup. See
+[Use the local mock provider](backup-and-restore.md#use-the-local-mock-provider)
+for setup, status, failure, retention, and restore details.
 
 ## Offline behavior
 

@@ -28,6 +28,9 @@ and this project intends to follow
 - Clarified that downloaded JSON backup is the durable backup mechanism, the
   `LocalMockSyncProvider` is for development/demo use only, and remote cloud sync
   is not implemented.
+- Documented the local mock provider's five-minute in-app timer, immediate
+  manual action, single-copy retention, failure visibility, and safe restore
+  workflow.
 - Centralized domain mutations in feature APIs and extracted complex view logic
   into hooks.
 - Reduced the initial and offline application payload.

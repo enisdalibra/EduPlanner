@@ -117,18 +117,55 @@ previous recovery snapshot.
 
 ## Use the local mock provider
 
-The optional `LocalMockSyncProvider` can create and restore a backup within the
-same browser profile and origin. Its restore uses the same preview, validation,
-recovery snapshot, confirmation, and transactional replacement flow as a file
-restore.
+The optional `LocalMockSyncProvider` is a development/demo tool, not durable
+backup or cloud sync. It receives the same complete backup payload as a JSON
+export, but stores it inside the current browser instead of downloading a file.
 
-Use it only for development or demonstrations. It is unsuitable as a durable
-backup because:
+### Create and observe a mock backup
 
-- the live database and mock backup are on the same device;
-- clearing site data can remove both;
-- it cannot restore automatically on another origin, browser, or device; and
-- there is no authentication, remote storage, or provider recovery mechanism.
+1. Open **Settings (Backup)**.
+2. Under **Backup Provider**, select **Local Mock (Development Only)**.
+3. To schedule backups, turn on **Local mock auto-backup (5 minutes)**. Enabling
+   the control only starts the timer; it does not create an immediate backup.
+   The first scheduled attempt occurs after five minutes.
+4. Keep EduPlanner open. The timer runs every five minutes only while the
+   application and its main layout are open. It is not a service-worker,
+   background-sync, server, or closed-browser feature.
+5. Use the header status indicator to observe whether auto-backup is disabled,
+   waiting, creating a copy, or showing the time of the last successful copy.
+   Scheduled failures are logged to the developer console and do not show a
+   toast.
+
+Choose **Create Mock Backup** to create or replace the mock copy immediately
+instead of waiting for the timer. Selecting **Disconnected** as the provider
+disables auto-backup; the enabled setting is persisted only for the mock
+provider.
+
+### Understand storage and retention
+
+The provider stores one payload and one timestamp in same-origin `localStorage`.
+Each successful scheduled or manual backup replaces that single copy. There is
+no version history or retention policy.
+
+The mock copy is limited to the same browser profile and origin as the live
+IndexedDB database. Clearing site data can remove both the live data and the
+mock copy. There is no remote upload, authentication, provider recovery,
+cross-device access, or automatic transfer to another browser or EduPlanner
+URL.
+
+For durable recovery, use **Download Backup** and store the JSON file outside
+the browser profile in a secure location. A downloaded file can be retained in
+multiple generations and transferred through an approved secure method; the
+mock copy cannot.
+
+### Restore the mock copy
+
+Choose **Restore Mock** in Settings. If a copy exists, EduPlanner shows the same
+record-count preview and validation results used for a file restore. Before any
+replacement, download the recovery snapshot of the current database and
+explicitly confirm the restore. The replacement uses one database transaction
+and a final integrity check, so it does not leave a partial database on
+failure.
 
 ## Move data to another origin or device
 
