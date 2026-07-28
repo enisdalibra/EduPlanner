@@ -192,7 +192,7 @@ Recommended caching:
 
 | Path | Cache-Control |
 | --- | --- |
-| `/index.html`, `/sw.js`, `/registerSW.js`, `/manifest.webmanifest` | `no-cache` |
+| `/index.html`, `/sw.js`, `/manifest.webmanifest` | `no-cache` |
 | `/assets/*` | `public, max-age=31536000, immutable` |
 
 Do not cache the HTML shell or service-worker entry immutably. Hashed assets are

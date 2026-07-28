@@ -36,6 +36,8 @@ and this project intends to follow
 
 ### Fixed
 
+- Removed the nonexistent `/registerSW.js` path from the deployment cache
+  guidance while retaining the prompt-based PWA registration model.
 - Corrected the release documentation to show that `release:check` runs the
   tracked-file privacy scan before the complete `verify` chain.
 - Aligned the documented Node.js minimum, package engine, local version file,
