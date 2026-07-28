@@ -1,0 +1,94 @@
+{
+  "name": "eduplanner-local",
+  "private": true,
+  "version": "0.1.0",
+  "description": "An offline-first teacher workspace for managing classes, attendance, grades, teaching materials, schedules, and tasks.",
+  "author": "Enisda Libra Kelana",
+  "license": "MIT",
+  "homepage": "https://github.com/enisdalibra/EduPlanner#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enisdalibra/EduPlanner.git"
+  },
+  "bugs": {
+    "url": "https://github.com/enisdalibra/EduPlanner/issues"
+  },
+  "keywords": [
+    "education",
+    "teacher",
+    "offline-first",
+    "pwa",
+    "react",
+    "indexeddb"
+  ],
+  "engines": {
+    "node": ">=22.22.0"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port=3000",
+    "build": "npm run icons:subset && vite build && npm run verify:bundle && npm run test:offline",
+    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    "clean": "node scripts/clean.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "npm run typecheck",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "icons:subset": "node scripts/subset-material-icons.mjs",
+    "verify:bundle": "node scripts/check-bundle-budget.mjs",
+    "test:offline": "node scripts/check-offline-build.mjs",
+    "privacy:check": "node scripts/check-sensitive-files.mjs",
+    "check:release-artifact": "node scripts/check-release-artifact.mjs",
+    "verify": "npm run typecheck && npm run test:coverage && npm run build && npm run check:release-artifact && npm audit",
+    "release:check": "npm run privacy:check && npm run verify"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.4.1",
+    "@fontsource/inter": "^5.2.8",
+    "@tanstack/react-virtual": "^3.13.24",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "dexie": "^4.4.2",
+    "dexie-react-hooks": "^4.4.0",
+    "next-themes": "^0.4.6",
+    "react": "^19.2.7",
+    "react-day-picker": "^9.14.0",
+    "react-dom": "^19.2.7",
+    "react-markdown": "^10.1.0",
+    "react-router": "8.3.0",
+    "read-excel-file": "^9.3.2",
+    "recharts": "^3.8.1",
+    "remark-gfm": "^4.0.1",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.5.0",
+    "write-excel-file": "^4.1.1",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.19",
+    "@tailwindcss/vite": "^4.1.14",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "@vitest/coverage-v8": "^4.1.7",
+    "@vitest/ui": "^4.1.6",
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^29.1.1",
+    "material-symbols": "^0.44.12",
+    "subset-font": "^2.5.0",
+    "tailwindcss": "^4.1.14",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0",
+    "vite-plugin-pwa": "^1.2.0",
+    "vitest": "^4.1.6"
+  },
+  "overrides": {
+    "workbox-build": {
+      "brace-expansion": "5.0.8"
+    }
+  }
+}

@@ -1,0 +1,48 @@
+name: Feature request
+description: Propose an improvement without including real educational records
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Describe the need without including identifiable school or student data.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed outcome
+      description: What should users be able to do?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: data-impact
+    attributes:
+      label: Data and privacy impact
+      options:
+        - No stored-data impact
+        - Changes local browser data
+        - Changes backup or import/export behavior
+        - Proposes a network or third-party integration
+        - Unsure
+    validations:
+      required: true
+  - type: textarea
+    id: offline
+    attributes:
+      label: Offline behavior
+      description: Explain how the proposal should behave without a network connection.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: This request contains no real student records, rosters, backups, screenshots, secrets, or personal data.
+          required: true

@@ -1,0 +1,47 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+CODE_REVIEW.md
+IMPLEMENTATION_PLAN.md
+IMPLEMENTATION_PLAN_DETAILED.md
+.kilo/
+implementation-plan-v2.md
+
+# User databases and backups
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.indexeddb
+*.idb
+*.backup
+*.bak
+*eduplanner_backup*.json
+*eduplanner_pre_restore*.json
+
+# Student roster and exports
+*.xlsx
+*.xls
+*.csv
+*.tsv
+
+# Local browser/test artifacts
+playwright-report/
+test-results/
+*.har
+*.trace
+storage-state*.json
+user-data-dir/
+browser-profile/
+
+# Local screenshots and recordings
+screenshots-local/
+recordings-local/
+
+# Only explicitly synthetic fixture directories may contain ignored data formats.
+!__tests__/fixtures/synthetic/**/*.json
+!docs/examples/synthetic/**/*.csv

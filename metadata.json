@@ -1,0 +1,6 @@
+{
+  "name": "EduPlanner Local",
+  "description": "Offline-First Teacher Command Center for managing classes, attendance, grades, and notes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
