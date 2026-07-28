@@ -154,8 +154,8 @@ Useful commands:
 | `npm run test:coverage` | Run tests and generate V8 coverage. |
 | `npm run build` | Create the production PWA bundle in `dist/`. |
 | `npm run preview` | Preview the production build at `http://127.0.0.1:4173`. |
-| `npm run verify` | Run type-check, coverage, build/PWA checks, and the full dependency audit. |
-| `npm run release:check` | Alias for `npm run verify`, retained for release workflows. |
+| `npm run verify` | Run type-checking, coverage, production/PWA build checks, release-artifact validation, and the full dependency audit. |
+| `npm run release:check` | Run the tracked-file `privacy:check` first, then the complete `verify` chain. |
 
 No runtime environment variable or `.env` file is required. Static subpath builds
 may set the build-time-only `DEPLOY_BASE_PATH` in the invoking shell. Environment

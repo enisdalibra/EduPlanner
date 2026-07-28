@@ -35,6 +35,8 @@ and this project intends to follow
 
 ### Fixed
 
+- Corrected the release documentation to show that `release:check` runs the
+  tracked-file privacy scan before the complete `verify` chain.
 - Aligned the documented Node.js minimum, package engine, local version file,
   and GitHub Actions runtime on the Node.js 22.22.0 baseline.
 - Made the Dashboard export use the complete, versioned 11-table backup format

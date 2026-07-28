@@ -59,9 +59,10 @@ Open `http://127.0.0.1:4173` and verify:
 4. After one online load, an offline reload displays the application shell.
 5. The browser reports an active service worker and no missing asset requests.
 
-`release:check` is a compatibility alias for `verify`. The gate runs
-type-checking, coverage thresholds, the production build, bundle budgets, the
-generated-PWA offline check, and the full dependency audit. Do not publish an
+`verify` runs type-checking, coverage thresholds, the production build and its
+bundle-budget and generated-PWA offline checks, release-artifact allowlist
+validation, and the full dependency audit. `release:check` runs the tracked-file
+`privacy:check` first, then the complete `verify` chain. Do not publish an
 artifact produced by a failed gate.
 
 The artifact uploaded to a host must be exactly the `dist/` directory produced
