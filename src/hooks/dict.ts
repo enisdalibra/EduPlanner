@@ -35,6 +35,7 @@ export const dict = {
     },
     dashboard: {
       exportBtn: "Export Data",
+      exporting: "Mengekspor...",
       studentData: "TOTAL DATA SISWA",
       registered: "TERDAFTAR",
       noStudentData: "Belum ada data siswa",
@@ -759,6 +760,7 @@ export const dict = {
     },
     dashboard: {
       exportBtn: "Export Data",
+      exporting: "Exporting...",
       studentData: "TOTAL STUDENT DATA",
       registered: "ENROLLED",
       noStudentData: "No student data yet",

@@ -78,6 +78,10 @@ EduPlanner is local-first and does not require a backend. The available storage 
 | Local mock provider | `localStorage` in the current browser profile and origin | Development and demonstrations | It is not cloud storage, is unavailable from another browser/origin/device, and can be deleted with browser storage. |
 | Remote cloud backup | Not available | — | No data is uploaded to a remote backup service. |
 
+The **Export Data** shortcut on the Dashboard and **Download Backup** in
+Settings generate the same complete, versioned JSON backup containing all 11
+database tables.
+
 Before a file or mock backup replaces local data, EduPlanner validates its structure and relationships, shows a preview with record counts and migration warnings, and prepares a recovery snapshot of the current database. The user must download that snapshot and explicitly confirm the destructive restore. Because a browser cannot verify that a download was actually saved, the user must confirm that the recovery file is safely stored before continuing.
 
 Restore writes all tables in one transaction and runs a final integrity check. A validation error or transactional failure does not partially replace the existing database. Backups created by supported legacy versions are migrated through explicit rules; backups from a newer, unsupported application version are rejected.

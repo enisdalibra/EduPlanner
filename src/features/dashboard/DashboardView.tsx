@@ -1,11 +1,11 @@
 import { Link } from "react-router";
 import { cn } from "@/lib/utils";
-import { db } from "@/db/database";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
+import { BackupService } from "@/services/BackupService";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useDashboardStats } from "./hooks/useDashboardStats";
 
@@ -18,16 +18,7 @@ export function DashboardView() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const data = {
-        classes: await db.classes.toArray(),
-        students: await db.students.toArray(),
-        attendances: await db.attendances.toArray(),
-        grades: await db.grades.toArray(),
-        notes: await db.notes.toArray(),
-        tasks: await db.tasks.toArray(),
-      };
-
-      const jsonString = JSON.stringify(data, null, 2);
+      const jsonString = await BackupService.generateExportPayload(2);
       const blob = new Blob([jsonString], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       
@@ -64,7 +55,7 @@ export function DashboardView() {
           )}
         >
           <Icon name={isExporting ? 'sync' : 'download'} className={cn("w-4 h-4", isExporting && "animate-spin")} />
-          {isExporting ? 'Exporting...' : t('dashboard.exportBtn')}
+          {isExporting ? t('dashboard.exporting') : t('dashboard.exportBtn')}
         </button>
       </div>
 

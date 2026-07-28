@@ -35,6 +35,8 @@ and this project intends to follow
 
 ### Fixed
 
+- Made the Dashboard export use the complete, versioned 11-table backup format
+  instead of a partial legacy JSON payload.
 - Completed transactional cascade deletion for classes and students.
 - Preserved recurring class schedules as general schedules when deleting a
   subject, preventing orphaned schedule references.

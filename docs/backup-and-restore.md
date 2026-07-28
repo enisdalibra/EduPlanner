@@ -27,6 +27,11 @@ apply application-level encryption to backup files.
 
 ## Create a JSON backup
 
+The **Export Data** action on the Dashboard is a shortcut for the same complete,
+versioned backup used by **Download Backup** in Settings. Both actions include
+all 11 database tables and produce a file that can be restored through the
+workflow below.
+
 1. Open **Settings (Backup)**.
 2. Find **Export Data (Backup)**.
 3. Choose **Download Backup**.
