@@ -13,7 +13,8 @@ and this project intends to follow
 - Safe backup restore with structural and relational validation, legacy
   migration, record-count preview, pre-restore recovery snapshot, transactional
   replacement, and final integrity checking.
-- Complete Indonesian and English teacher-facing interface.
+- Indonesian and English support across the main teacher-facing interface, with
+  some fallback and exceptional states not yet translated.
 - Embedded Markdown presentation quizzes.
 - Installable offline PWA shell with bundle and offline-build checks.
 - Manual GitHub Pages deployment and rollback workflow.

@@ -31,7 +31,7 @@ Status meanings:
 | Calendar, tasks, and recurring schedules | Complete | Daily, weekly, and monthly schedules plus tagged tasks. |
 | Class reminders | Partial | Native browser notifications are checked while the application is open. Lock-screen previews hide class, subject, and time details by default; detailed previews require an explicit opt-in. This is not a server push/background scheduling service. |
 | Teaching time tracker | Complete | Active timer persistence and IndexedDB teaching-session history. |
-| Indonesian and English UI | Complete | Language preference is stored locally. |
+| Indonesian and English UI | Partial | The main interface is bilingual and the language preference is stored locally; some fallback, loading, tooltip, accessibility, and exceptional states remain untranslated. |
 | Light/dark/system theme | Partial | Main theme preference works; the toast wrapper still reads a separate theme context. |
 | Global undo/redo | Partial | Implemented for grade edits and attendance saves, not every mutation. |
 | Local JSON backup and restore | Complete | Versioned file backups cover all 11 tables. Restore includes structural and relational validation, legacy migration, a record-count preview, a pre-restore recovery snapshot, and an atomic transaction. |
@@ -61,7 +61,11 @@ The screenshots below use an empty dataset and anonymous sample material. They d
 
 ## Internationalization
 
-EduPlanner supports Indonesian (`id`) and English (`en`) throughout the teacher-facing interface. The selected language is stored locally in the browser, so it survives refreshes without requiring an account or backend service.
+EduPlanner's main interface supports Indonesian (`id`) and English (`en`). The
+selected language is stored locally in the browser, so it survives refreshes
+without requiring an account or backend service. Some fallback, loading,
+tooltip, accessibility, and exceptional states still bypass the translation
+dictionary or remain untranslated.
 
 Translations live in `src/hooks/dict.ts` and are accessed with `useTranslation()`. CI tests keep the Indonesian and English key structures in sync, so new open-source contributions should add both language strings for every new user-facing label, toast, dialog, tooltip, and empty state.
 
