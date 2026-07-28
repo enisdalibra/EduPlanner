@@ -129,7 +129,7 @@ The quiz view distributes 100 points across valid questions and shows progress, 
 
 ## Requirements
 
-- Node.js 20.19.x or Node.js 22.12 and newer
+- Node.js 22.22.0 or newer (the CI baseline is recorded in `.nvmrc`)
 - npm (the repository includes `package-lock.json`)
 - A modern browser with IndexedDB support
 

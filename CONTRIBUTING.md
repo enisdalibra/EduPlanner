@@ -54,7 +54,7 @@ If a problem can only be reproduced with sensitive data, stop and follow
 
 Requirements:
 
-- Node.js `20.19.x` or `22.12.0` and newer;
+- Node.js `22.22.0` or newer (use the CI baseline recorded in `.nvmrc`);
 - npm; and
 - a modern browser with IndexedDB support.
 

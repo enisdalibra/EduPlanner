@@ -30,7 +30,8 @@ cannot be included in a deployment through the application architecture.
 
 ## Prerequisites
 
-- Use a Node.js version allowed by `package.json` and install from the lockfile with
+- Use Node.js `22.22.0` or newer, as required by `package.json`. CI reads its
+  baseline version from `.nvmrc`. Install dependencies from the lockfile with
   `npm ci`.
 - Select a static host that serves unknown files normally; application navigation
   uses hash routes and does not require an SPA rewrite rule.

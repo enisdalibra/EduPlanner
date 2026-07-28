@@ -35,6 +35,8 @@ and this project intends to follow
 
 ### Fixed
 
+- Aligned the documented Node.js minimum, package engine, local version file,
+  and GitHub Actions runtime on the Node.js 22.22.0 baseline.
 - Made the Dashboard export use the complete, versioned 11-table backup format
   instead of a partial legacy JSON payload.
 - Completed transactional cascade deletion for classes and students.
