@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { lstat, readdir, readFile } from "node:fs/promises";
 import { basename, dirname, extname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,10 +7,14 @@ import { scanTextContent } from "./check-sensitive-files.mjs";
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const REPOSITORY_ROOT = resolve(dirname(SCRIPT_PATH), "..");
 export const DIST_PATH = resolve(REPOSITORY_ROOT, "dist");
+const EXPECTED_RELEASE_VERSION = JSON.parse(
+  readFileSync(resolve(REPOSITORY_ROOT, "package.json"), "utf8"),
+).version;
 
 const REQUIRED_FILES = new Set([
   "index.html",
   "manifest.webmanifest",
+  "release.json",
   "sw.js",
   ".vite/manifest.json",
   "THIRD_PARTY_NOTICES.txt",
@@ -25,6 +30,7 @@ const REQUIRED_NOTICE_MARKERS = [
 const ALLOWED_ROOT_FILES = [
   /^index\.html$/,
   /^manifest\.webmanifest$/,
+  /^release\.json$/,
   /^sw\.js$/,
   /^THIRD_PARTY_NOTICES\.txt$/,
   /^workbox-[A-Za-z0-9_-]+\.js$/,
@@ -151,6 +157,46 @@ export function inspectArtifactPath(filePath) {
   return issues;
 }
 
+export function inspectReleaseIdentity(
+  content,
+  expectedVersion = EXPECTED_RELEASE_VERSION,
+) {
+  let identity;
+  try {
+    identity = JSON.parse(content);
+  } catch {
+    return [
+      finding(
+        "release.json",
+        "invalid-release-identity",
+        "release identity must be valid JSON",
+      ),
+    ];
+  }
+
+  const validRevision =
+    typeof identity.revision === "string" &&
+    (/^[0-9a-f]{40}$/i.test(identity.revision) ||
+      identity.revision === "unknown");
+  if (
+    !identity ||
+    Array.isArray(identity) ||
+    identity.version !== expectedVersion ||
+    !validRevision ||
+    typeof identity.dirty !== "boolean"
+  ) {
+    return [
+      finding(
+        "release.json",
+        "invalid-release-identity",
+        "release identity must match the package version and contain revision and dirty fields",
+      ),
+    ];
+  }
+
+  return [];
+}
+
 async function listArtifactEntries(directory, root = directory) {
   const entries = await readdir(directory, { withFileTypes: true });
   const output = [];
@@ -248,6 +294,9 @@ export async function inspectReleaseArtifact(distPath = DIST_PATH) {
             );
           }
         }
+      }
+      if (entry.path === "release.json") {
+        issues.push(...inspectReleaseIdentity(content));
       }
     }
   }

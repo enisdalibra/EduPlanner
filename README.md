@@ -19,6 +19,11 @@ The default branch is the supported pre-release line until the first supported
 release is tagged. No stable release or stability guarantee is currently
 offered.
 
+The current source version is **`0.1.0-beta.1`**. Production builds expose that
+version and their Git revision on the **About** page and in the generated
+`release.json` file. A `-dirty` revision identifies a local build that includes
+uncommitted worktree changes and must not be published as a release artifact.
+
 The public beta designation means:
 
 - implemented workflows can be evaluated and used with the safeguards

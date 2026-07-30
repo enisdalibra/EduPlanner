@@ -69,6 +69,34 @@ The artifact uploaded to a host must be exactly the `dist/` directory produced
 by that successful build. Do not deploy the repository root, `src/`, `docs/`,
 tests, coverage output, local screenshots, or browser artifacts.
 
+## Release identity
+
+The release version has one source of truth in `package.json`; the root package
+entry in `package-lock.json` must match it. Every production build embeds:
+
+- the Semantic Versioning value from `package.json`;
+- the full commit SHA of the checked-out source; and
+- whether the worktree contained changes when the build started.
+
+Users can see the version and shortened revision on the **About** page. The
+generated `dist/release.json` contains the complete machine-readable identity
+and is included in the offline application shell. The release-artifact gate
+rejects a missing, malformed, or version-mismatched identity file.
+
+A revision displayed with `-dirty` is useful for local testing but must not be
+published. For a tagged release:
+
+1. Start from a clean worktree and run `npm run release:check`.
+2. Confirm that `package.json`, `package-lock.json`, and the changelog release
+   heading contain the same version.
+3. Confirm that `dist/release.json` has `"dirty": false` and records the commit
+   intended for publication.
+4. Commit the release state before creating the matching `v<version>` tag.
+5. Create the GitHub Release from that exact tag and record the deployed commit
+   and workflow run.
+
+Do not move an existing release tag or reuse a version for different source.
+
 ## Static hosting base path
 
 The default build targets the origin root (`/`). For a host mounted below a path,

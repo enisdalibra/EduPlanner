@@ -8,8 +8,12 @@ and this project intends to follow
 
 ## [Unreleased]
 
+## [0.1.0-beta.1] - 2026-07-30
+
 ### Added
 
+- Traceable build identity derived from the package version and checked-out Git
+  revision, exposed in the About page and generated `release.json` artifact.
 - Safe backup restore with structural and relational validation, legacy
   migration, record-count preview, pre-restore recovery snapshot, transactional
   replacement, and final integrity checking.
@@ -84,4 +88,5 @@ and this project intends to follow
 - Documented that EduPlanner has no application-level encryption,
   authentication, backend, or remote cloud provider.
 
-[Unreleased]: https://github.com/enisdalibra/EduPlanner/commits/main
+[Unreleased]: https://github.com/enisdalibra/EduPlanner/compare/v0.1.0-beta.1...HEAD
+[0.1.0-beta.1]: https://github.com/enisdalibra/EduPlanner/releases/tag/v0.1.0-beta.1

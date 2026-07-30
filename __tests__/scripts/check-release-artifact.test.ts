@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   DIST_PATH,
   inspectArtifactPath,
+  inspectReleaseIdentity,
   inspectReleaseArtifact,
 } from "../../scripts/check-release-artifact.mjs";
 
@@ -29,6 +30,14 @@ describe("release artifact allowlist", () => {
     await Promise.all([
       write("index.html", "<!doctype html><div id=\"root\"></div>"),
       write("manifest.webmanifest", "{}"),
+      write(
+        "release.json",
+        JSON.stringify({
+          version: "0.1.0-beta.1",
+          revision: "0123456789abcdef0123456789abcdef01234567",
+          dirty: false,
+        }),
+      ),
       write("sw.js"),
       write(".vite/manifest.json", "{}"),
       write("workbox-example.js"),
@@ -78,6 +87,7 @@ describe("release artifact allowlist", () => {
   it.each([
     "index.html",
     "manifest.webmanifest",
+    "release.json",
     "sw.js",
     "THIRD_PARTY_NOTICES.txt",
     "workbox-example.js",
@@ -114,7 +124,21 @@ describe("release artifact allowlist", () => {
     const result = await inspectReleaseArtifact(root);
 
     expect(result.issues).toHaveLength(0);
-    expect(result.fileCount).toBe(9);
+    expect(result.fileCount).toBe(10);
+  });
+
+  it("rejects malformed or mismatched release identity", () => {
+    expect(inspectReleaseIdentity("not json", "0.1.0-beta.1")).not.toHaveLength(0);
+    expect(
+      inspectReleaseIdentity(
+        JSON.stringify({
+          version: "0.1.0",
+          revision: "0123456789abcdef0123456789abcdef01234567",
+          dirty: false,
+        }),
+        "0.1.0-beta.1",
+      ),
+    ).not.toHaveLength(0);
   });
 
   it("rejects incomplete third-party font notices", async () => {

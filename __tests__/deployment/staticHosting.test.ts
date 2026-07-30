@@ -34,6 +34,9 @@ describe('static hosting configuration', () => {
     const runbook = readFileSync(resolve(process.cwd(), 'docs/deployment.md'), 'utf8');
 
     expect(runbook).toContain('## Release checks and local preview');
+    expect(runbook).toContain('## Release identity');
+    expect(runbook).toContain('dist/release.json');
+    expect(runbook).toContain('"dirty": false');
     expect(runbook).toContain('## Hosting headers and cache policy');
     expect(runbook).toContain('## Post-deployment verification');
     expect(runbook).toContain('## Rollback checklist');

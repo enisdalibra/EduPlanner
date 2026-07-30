@@ -4,9 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { SHORTCUTS } from "@/hooks/useKeyboardShortcuts";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Icon } from "@/components/ui/icon";
+import { BUILD_INFO, formatBuildRevision } from "@/lib/buildInfo";
 
 export function AboutView() {
   const { t } = useTranslation();
+  const buildRevision = formatBuildRevision();
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-10">
@@ -68,6 +70,22 @@ export function AboutView() {
               <p>
                 {t('about.desc')}
               </p>
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-950">
+                <p className="font-semibold">{t('about.releaseStatus')}</p>
+                <p className="mt-1 text-xs text-amber-800">
+                  {t('about.releaseStatusDesc')}
+                </p>
+                <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+                  <dt className="font-medium">{t('about.version')}</dt>
+                  <dd>
+                    <code>{BUILD_INFO.version}</code>
+                  </dd>
+                  <dt className="font-medium">{t('about.revision')}</dt>
+                  <dd>
+                    <code title={BUILD_INFO.revision}>{buildRevision}</code>
+                  </dd>
+                </dl>
+              </div>
               <div className="bg-blue-50 text-blue-800 p-3 rounded-lg border border-blue-100">
                 <p className="font-semibold mb-1">{t('about.devInfo')}</p>
                 <div className="flex items-center gap-2 mt-2">

@@ -1,14 +1,40 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import { readFileSync } from 'node:fs';
 import path from 'path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { applyContentSecurityPolicy } from './scripts/content-security-policy.mjs';
 import { resolveDeploymentBase } from './scripts/deployment-base.mjs';
+import { createReleaseIdentity } from './scripts/release-identity.mjs';
+
+const repositoryRoot = fileURLToPath(new URL('.', import.meta.url));
+const packageMetadata = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
+) as { version: string };
+const releaseIdentity = createReleaseIdentity(packageMetadata.version, {
+  cwd: repositoryRoot,
+});
 
 export default defineConfig(({ command }) => ({
   base: resolveDeploymentBase(),
+  define: {
+    __EDUPLANNER_VERSION__: JSON.stringify(releaseIdentity.version),
+    __EDUPLANNER_REVISION__: JSON.stringify(releaseIdentity.revision),
+    __EDUPLANNER_DIRTY__: JSON.stringify(releaseIdentity.dirty),
+  },
   plugins: [
+    {
+      name: 'eduplanner-release-identity',
+      generateBundle() {
+        this.emitFile({
+          type: 'asset',
+          fileName: 'release.json',
+          source: `${JSON.stringify(releaseIdentity, null, 2)}\n`,
+        });
+      },
+    },
     {
       name: 'eduplanner-content-security-policy',
       enforce: 'pre',
@@ -36,7 +62,7 @@ export default defineConfig(({ command }) => ({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,json,ico,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024
       }
     })
