@@ -79,6 +79,9 @@ and this project intends to follow
 - Pinned every GitHub Actions dependency to a verified full commit SHA, added a
   regression guard against mutable action references, and enabled weekly
   Dependabot updates for those pins.
+- Enabled weekly Dependabot updates for npm packages, grouping routine minor and
+  patch updates by production or development scope while leaving major and
+  security changes independently reviewable.
 - Removed unused client-side AI environment scaffolding and reject every tracked
   `.env` file, including `.env.example`.
 - Enforced transactional class, student, subject, and note relationships across

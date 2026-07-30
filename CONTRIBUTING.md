@@ -94,6 +94,17 @@ credential must first introduce and document a trusted server boundary.
 - Update user documentation when behavior, limitations, storage, backup, or
   privacy expectations change.
 
+### Dependency updates
+
+Dependabot checks npm packages and pinned GitHub Actions weekly. Routine npm
+minor and patch updates are grouped separately for production and development
+dependencies; major upgrades and security fixes remain independently reviewable.
+
+Do not merge dependency PRs based only on the version number. Review upstream
+release notes, lockfile changes, licenses, browser/runtime compatibility, and
+the complete CI result. Major upgrades should document any migration or rollback
+implications. Dependency PRs are never assumed safe for automatic merge.
+
 ## Tests
 
 Add focused tests for changed behavior, especially:
