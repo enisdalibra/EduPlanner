@@ -27,7 +27,7 @@ describe('static hosting configuration', () => {
     expect(workflow).toMatch(
       /actions\/upload-pages-artifact@[0-9a-f]{40}\s+# v5\.0\.0/,
     );
-    expect(workflow).toMatch(/actions\/deploy-pages@[0-9a-f]{40}\s+# v4\.0\.5/);
+    expect(workflow).toMatch(/actions\/deploy-pages@[0-9a-f]{40}\s+# v5\.0\.0/);
   });
 
   it('documents preview, security headers, verification, and rollback', () => {
