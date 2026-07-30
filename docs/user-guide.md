@@ -120,8 +120,11 @@ subject-enrollment references. Back up first if those records may be needed.
 4. Save the attendance.
 
 Review the saved result before leaving the page. Undo is available for attendance
-saves, but the current beta has a known limitation when undoing the first save
-on a previously empty date.
+saves, but the current public beta has a known defect: undoing the first save on
+a previously empty date does not remove the newly created records. Correct the
+saved attendance manually if needed. See the canonical [release
+status](../README.md#release-status) and [known
+defect](../README.md#known-defect) before using EduPlanner with real records.
 
 ## Record grades
 

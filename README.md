@@ -5,14 +5,43 @@ EduPlanner Local is an offline-first teacher workspace for managing classes, stu
 The application is a client-side React PWA. Its primary database is IndexedDB on the current browser profile; no backend is required for normal daily use.
 
 > [!IMPORTANT]
-> This repository is currently a functional beta. Local JSON backup/restore covers every database table and includes validation, a recovery snapshot, preview, and transactional restore. The optional mock provider is for development/demo use only; remote cloud backup is not implemented. Review [Backup and restore](#backup-and-restore) and [Current limitations](#current-limitations) before using EduPlanner for irreplaceable records.
+> EduPlanner is currently a **pre-release public beta**, not a stable release.
+> It is suitable for evaluation, demonstrations with synthetic data, and
+> cautious use with independently verified downloaded backups. Do not use it as
+> the only system of record for irreplaceable educational data. Review the
+> [release status](#release-status), [known defect](#known-defect), [backup
+> model](#backup-and-restore), and [current limitations](#current-limitations)
+> before using it with real records.
+
+## Release status
+
+The default branch is the supported pre-release line until the first supported
+release is tagged. No stable release or stability guarantee is currently
+offered.
+
+The public beta designation means:
+
+- implemented workflows can be evaluated and used with the safeguards
+  documented in this repository;
+- feature behavior, browser storage, and backup compatibility may still change
+  before the first stable release;
+- known defects and limitations are documented rather than represented as
+  completed stable behavior; and
+- users remain responsible for complying with applicable school privacy rules
+  and maintaining downloaded backups outside the browser profile.
+
+A stable release should not be inferred from the package version, a successful
+build, or a passing CI run. Those checks establish the quality of the reviewed
+revision; they do not remove the beta limitations below.
 
 ## Feature status
 
 Status meanings:
 
-- **Complete**: implemented and available in the current UI.
-- **Partial**: usable, with a documented limitation or integrity issue.
+- **Complete**: implemented and available in the current UI for the documented
+  beta scope; this does not mean the feature has a stable compatibility
+  guarantee.
+- **Partial**: usable in the beta, with a documented limitation or known defect.
 - **Mock**: a local development/demo simulation, not the remote service its interface may represent.
 - **Not implemented**: the feature is not available.
 
@@ -38,6 +67,13 @@ Status meanings:
 | Local mock backup provider | Mock | `LocalMockSyncProvider` stores and restores a backup from `localStorage` in the same browser and origin. It is development/demo functionality only. |
 | Remote cloud sync | Not implemented | There is no remote provider, authentication, backend, cross-device sync, or multi-user service. |
 | Gemini/AI integration | Not implemented | No AI client SDK, API-key configuration, or application feature is installed. Any future integration must use a trusted server boundary. |
+
+## Known defect
+
+- **Attendance undo on a previously empty date:** saving attendance for the
+  first time creates new records, but undo does not yet remove those newly
+  created records. Review the saved attendance and correct it manually if
+  needed. This defect is why attendance remains marked **Partial**.
 
 ## Screenshots
 
@@ -234,6 +270,8 @@ The current Dexie database contains:
 
 ## Current limitations
 
+- EduPlanner is a pre-release public beta and has no stable compatibility
+  guarantee yet.
 - Remote cloud sync is not implemented. The available `LocalMockSyncProvider` is a same-browser, same-origin development/demo simulation backed by `localStorage`.
 - Deleting site data can remove both the IndexedDB application database and the mock backup. Keep downloaded JSON backups in a separate, secure location.
 - Excel roster import accepts `.xlsx`; legacy `.xls` and CSV files are not supported.

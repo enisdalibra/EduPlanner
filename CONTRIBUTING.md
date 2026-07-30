@@ -121,10 +121,18 @@ and obtaining agreement on the reason.
 Documentation must reflect implemented behavior rather than planned behavior.
 Use the feature status terms consistently:
 
-- **Complete** for implemented behavior available in the UI;
+- **Complete** for implemented behavior available in the UI within the
+  documented beta scope, not as a claim of stable compatibility;
 - **Partial** for usable behavior with a stated limitation;
 - **Mock** for development/demo simulations; and
 - **Not implemented** when no usable implementation exists.
+
+The release-status statement in `README.md` is authoritative. A change that
+adds or resolves a known defect, changes a documented limitation, or affects
+compatibility must update the release-status, feature-status, or limitations
+sections in the same pull request. Do not describe the project or an individual
+feature as stable unless the repository has adopted and documented that support
+commitment.
 
 Use only synthetic data in prose, screenshots, workbooks, and fixtures. Review
 documentation links and avoid exposing local filesystem paths or browser-profile

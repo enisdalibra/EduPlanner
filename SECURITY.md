@@ -6,15 +6,17 @@ while a problem is investigated.
 
 ## Supported versions
 
-Until the first public release is tagged, security fixes are made on the default
-branch.
+EduPlanner is currently a pre-release public beta. Until the first supported
+release is tagged, security fixes are made on the default branch. This support
+statement identifies where fixes are published; it is not a service-level or
+stability guarantee.
 
 After release, the latest `0.1.x` version will receive security fixes until a
 new support policy is published.
 
 | Version | Supported |
 | --- | --- |
-| Default branch before `v0.1.0` | Yes |
+| Public-beta default branch before `v0.1.0` | Yes |
 | Latest `0.1.x` release | Yes, after release |
 | Older snapshots and forks | No |
 

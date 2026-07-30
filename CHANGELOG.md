@@ -23,6 +23,11 @@ and this project intends to follow
 
 ### Changed
 
+- Clarified that the current default branch is a pre-release public beta, made
+  `README.md` the canonical release-status source, separated the known
+  attendance-undo defect from intentional limitations, and qualified
+  "Complete" as feature completeness within the documented beta scope rather
+  than a stable compatibility guarantee.
 - Replaced automatic PWA takeover with a bilingual update notice; a waiting
   service worker activates and reloads only after explicit user confirmation.
 - Clarified that downloaded JSON backup is the durable backup mechanism, the
