@@ -220,17 +220,20 @@ Recommended caching:
 
 | Path | Cache-Control |
 | --- | --- |
-| `/index.html`, `/sw.js`, `/manifest.webmanifest` | `no-cache` |
+| `/index.html`, `/sw.js`, `/manifest.webmanifest`, `/icons/*` | `no-cache` |
 | `/assets/*` | `public, max-age=31536000, immutable` |
 
 Do not cache the HTML shell or service-worker entry immutably. Hashed assets are
-safe to retain because each content change produces a new URL.
+safe to retain because each content change produces a new URL. PWA icons keep
+stable filenames for browser and operating-system compatibility, so they must
+be revalidated rather than cached immutably.
 
 ## Post-deployment verification
 
 1. Record the deployed commit SHA, workflow run, URL, and verification owner.
 2. Load the site in a clean browser profile and confirm all expected hash routes.
-3. Confirm the manifest and service worker use the intended base path and scope.
+3. Confirm the manifest and service worker use the intended base path and scope,
+   and inspect the regular and maskable icons in the browser application panel.
 4. Reload once offline after the service worker reports activation.
 5. Check browser console/network panels for CSP violations and 404 responses.
 6. Import a small `.xlsx` roster and download its template to exercise lazy chunks.

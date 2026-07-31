@@ -49,15 +49,55 @@ export default defineConfig(({ command }) => ({
       registerType: 'prompt',
       injectRegister: false,
       manifest: {
+        id: './',
         name: 'EduPlanner Local',
         short_name: 'EduPlanner',
-        description: 'Offline-First Teacher Command Center',
+        description: 'Ruang kerja guru offline untuk mengelola kelas, siswa, presensi, nilai, materi, dan jadwal.',
+        lang: 'id',
+        dir: 'ltr',
+        start_url: './',
+        scope: './',
+        display: 'standalone',
+        background_color: '#F8FAFC',
         theme_color: '#2563EB',
+        categories: ['education', 'productivity'],
+        prefer_related_applications: false,
         icons: [
           {
-            src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect y="0" x="0" width="100" height="100" fill="%232563EB"/><text y="65" x="25" fill="white" font-size="50" font-family="Arial">EP</text></svg>',
+            src: 'icons/eduplanner-icon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'any'
+          },
+          {
+            src: 'icons/eduplanner-icon-192.png',
             sizes: '192x192',
-            type: 'image/svg+xml'
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'icons/eduplanner-icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'icons/eduplanner-maskable.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'maskable'
+          },
+          {
+            src: 'icons/eduplanner-maskable-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable'
+          },
+          {
+            src: 'icons/eduplanner-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       },

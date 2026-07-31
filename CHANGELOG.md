@@ -14,6 +14,8 @@ and this project intends to follow
 
 - Traceable build identity derived from the package version and checked-out Git
   revision, exposed in the About page and generated `release.json` artifact.
+- Production PWA icon assets in SVG and PNG formats, including 192px and 512px
+  regular and maskable variants, a favicon, and an Apple touch icon.
 - Safe backup restore with structural and relational validation, legacy
   migration, record-count preview, pre-restore recovery snapshot, transactional
   replacement, and final integrity checking.

@@ -55,7 +55,7 @@ describe('static hosting configuration', () => {
 
     expect(runbook).not.toContain('/registerSW.js');
     expect(runbook).toContain(
-      '| `/index.html`, `/sw.js`, `/manifest.webmanifest` | `no-cache` |',
+      '| `/index.html`, `/sw.js`, `/manifest.webmanifest`, `/icons/*` | `no-cache` |',
     );
     expect(runbook).toContain('inject a second registration script');
     expect(viteConfig).toContain('injectRegister: false');

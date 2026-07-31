@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   DIST_PATH,
   inspectArtifactPath,
+  inspectPngDimensions,
   inspectReleaseIdentity,
   inspectReleaseArtifact,
 } from "../../scripts/check-release-artifact.mjs";
@@ -20,10 +21,21 @@ describe("release artifact allowlist", () => {
     await rm(root, { recursive: true, force: true });
   });
 
-  async function write(path: string, content = "generated"): Promise<void> {
+  async function write(
+    path: string,
+    content: string | Uint8Array = "generated",
+  ): Promise<void> {
     const target = join(root, ...path.split("/"));
     await mkdir(join(target, ".."), { recursive: true });
     await writeFile(target, content);
+  }
+
+  function pngHeader(size: number): Buffer {
+    const content = Buffer.alloc(24);
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(content);
+    content.writeUInt32BE(size, 16);
+    content.writeUInt32BE(size, 20);
+    return content;
   }
 
   async function writeValidArtifact(): Promise<void> {
@@ -41,6 +53,14 @@ describe("release artifact allowlist", () => {
       write("sw.js"),
       write(".vite/manifest.json", "{}"),
       write("workbox-example.js"),
+      write("icons/apple-touch-icon.png", pngHeader(180)),
+      write("icons/eduplanner-icon.svg", "<svg></svg>"),
+      write("icons/eduplanner-icon-192.png", pngHeader(192)),
+      write("icons/eduplanner-icon-512.png", pngHeader(512)),
+      write("icons/eduplanner-maskable.svg", "<svg></svg>"),
+      write("icons/eduplanner-maskable-192.png", pngHeader(192)),
+      write("icons/eduplanner-maskable-512.png", pngHeader(512)),
+      write("icons/favicon-32.png", pngHeader(32)),
       write(
         "THIRD_PARTY_NOTICES.txt",
         [
@@ -96,6 +116,8 @@ describe("release artifact allowlist", () => {
     "assets/app-example.css",
     "assets/font-example.woff2",
     "assets/icon-example.svg",
+    "icons/eduplanner-icon-192.png",
+    "icons/eduplanner-maskable.svg",
   ])("allows generated static asset %s", (path) => {
     expect(inspectArtifactPath(path)).toHaveLength(0);
   });
@@ -124,7 +146,24 @@ describe("release artifact allowlist", () => {
     const result = await inspectReleaseArtifact(root);
 
     expect(result.issues).toHaveLength(0);
-    expect(result.fileCount).toBe(10);
+    expect(result.fileCount).toBe(18);
+  });
+
+  it("rejects missing or incorrectly sized PWA icon PNGs", () => {
+    expect(
+      inspectPngDimensions(
+        "icons/eduplanner-icon-192.png",
+        pngHeader(512),
+        192,
+      ),
+    ).not.toHaveLength(0);
+    expect(
+      inspectPngDimensions(
+        "icons/eduplanner-icon-192.png",
+        Buffer.from("not a png"),
+        192,
+      ),
+    ).not.toHaveLength(0);
   });
 
   it("rejects malformed or mismatched release identity", () => {

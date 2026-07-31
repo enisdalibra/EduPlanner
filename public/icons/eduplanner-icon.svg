@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">EduPlanner</title>
+  <desc id="description">A white teaching planner with an EP monogram on a blue rounded square.</desc>
+  <defs>
+    <linearGradient id="background" x1="128" y1="96" x2="896" y2="928" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="424" y1="336" x2="648" y2="688" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#60A5FA"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <clipPath id="app-clip">
+      <rect x="64" y="64" width="896" height="896" rx="224"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#app-clip)">
+  <rect x="64" y="64" width="896" height="896" rx="224" fill="url(#background)"/>
+  <rect x="264" y="202" width="496" height="620" rx="96" fill="#EFF6FF" opacity=".24"/>
+  <rect x="232" y="174" width="496" height="620" rx="96" fill="#FFFFFF"/>
+  <rect x="232" y="174" width="496" height="142" rx="96" fill="#DBEAFE"/>
+  <path d="M232 270h496v46H232z" fill="#DBEAFE"/>
+  <rect x="314" y="124" width="44" height="116" rx="22" fill="#1E40AF"/>
+  <rect x="602" y="124" width="44" height="116" rx="22" fill="#1E40AF"/>
+  <circle cx="328" cy="418" r="28" fill="#BFDBFE"/>
+  <path d="m316 418 9 9 18-20" fill="none" stroke="#2563EB" stroke-linecap="round" stroke-linejoin="round" stroke-width="14"/>
+  <rect x="382" y="396" width="250" height="44" rx="22" fill="#DBEAFE"/>
+  <circle cx="328" cy="516" r="28" fill="#BFDBFE"/>
+  <path d="m316 516 9 9 18-20" fill="none" stroke="#2563EB" stroke-linecap="round" stroke-linejoin="round" stroke-width="14"/>
+  <rect x="382" y="494" width="202" height="44" rx="22" fill="#DBEAFE"/>
+  <rect x="304" y="608" width="352" height="118" rx="44" fill="url(#accent)"/>
+  <path d="M354 640h92v28h-58v14h52v26h-52v18h60v28h-94V640Zm116 0h58c54 0 86 20 86 57 0 38-32 57-86 57h-58V640Zm34 28v58h22c35 0 52-8 52-29 0-20-17-29-52-29h-22Z" fill="#FFFFFF"/>
+  </g>
+</svg>

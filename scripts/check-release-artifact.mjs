@@ -10,6 +10,14 @@ export const DIST_PATH = resolve(REPOSITORY_ROOT, "dist");
 const EXPECTED_RELEASE_VERSION = JSON.parse(
   readFileSync(resolve(REPOSITORY_ROOT, "package.json"), "utf8"),
 ).version;
+const REQUIRED_PNG_DIMENSIONS = new Map([
+  ["icons/apple-touch-icon.png", 180],
+  ["icons/eduplanner-icon-192.png", 192],
+  ["icons/eduplanner-icon-512.png", 512],
+  ["icons/eduplanner-maskable-192.png", 192],
+  ["icons/eduplanner-maskable-512.png", 512],
+  ["icons/favicon-32.png", 32],
+]);
 
 const REQUIRED_FILES = new Set([
   "index.html",
@@ -18,6 +26,14 @@ const REQUIRED_FILES = new Set([
   "sw.js",
   ".vite/manifest.json",
   "THIRD_PARTY_NOTICES.txt",
+  "icons/apple-touch-icon.png",
+  "icons/eduplanner-icon.svg",
+  "icons/eduplanner-icon-192.png",
+  "icons/eduplanner-icon-512.png",
+  "icons/eduplanner-maskable.svg",
+  "icons/eduplanner-maskable-192.png",
+  "icons/eduplanner-maskable-512.png",
+  "icons/favicon-32.png",
 ]);
 const REQUIRED_NOTICE_MARKERS = [
   "Inter font",
@@ -102,10 +118,37 @@ function isAllowedPath(path) {
   if (!path.includes("/")) {
     return ALLOWED_ROOT_FILES.some((pattern) => pattern.test(path));
   }
-  if (!path.startsWith("assets/")) {
+  if (!(path.startsWith("assets/") || path.startsWith("icons/"))) {
     return false;
   }
   return ALLOWED_ASSET_EXTENSIONS.has(extname(path).toLowerCase());
+}
+
+export function inspectPngDimensions(path, content, expectedSize) {
+  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  if (
+    !Buffer.isBuffer(content) ||
+    content.length < 24 ||
+    !content.subarray(0, 8).equals(signature)
+  ) {
+    return [
+      finding(path, "invalid-pwa-icon", "required PWA icon must be a valid PNG"),
+    ];
+  }
+
+  const width = content.readUInt32BE(16);
+  const height = content.readUInt32BE(20);
+  if (width !== expectedSize || height !== expectedSize) {
+    return [
+      finding(
+        path,
+        "invalid-pwa-icon",
+        `required PWA icon must be ${expectedSize}x${expectedSize} pixels`,
+      ),
+    ];
+  }
+
+  return [];
 }
 
 export function inspectArtifactPath(filePath) {
@@ -247,7 +290,9 @@ export async function inspectReleaseArtifact(distPath = DIST_PATH) {
         !(
           entry.path === ".vite" ||
           entry.path === "assets" ||
-          entry.path.startsWith("assets/")
+          entry.path.startsWith("assets/") ||
+          entry.path === "icons" ||
+          entry.path.startsWith("icons/")
         ) ||
         entry.path
           .toLowerCase()
@@ -278,6 +323,17 @@ export async function inspectReleaseArtifact(distPath = DIST_PATH) {
 
     files.add(entry.path);
     issues.push(...inspectArtifactPath(entry.path));
+
+    const expectedPngSize = REQUIRED_PNG_DIMENSIONS.get(entry.path);
+    if (expectedPngSize) {
+      issues.push(
+        ...inspectPngDimensions(
+          entry.path,
+          await readFile(entry.absolutePath),
+          expectedPngSize,
+        ),
+      );
+    }
 
     if (TEXT_EXTENSIONS.has(extname(entry.path).toLowerCase())) {
       const content = await readFile(entry.absolutePath, "utf8");
