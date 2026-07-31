@@ -76,7 +76,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "@vitest/ui": "^4.1.6",
     "fake-indexeddb": "^6.2.5",
-    "jsdom": "^29.1.1",
+    "jsdom": "^30.0.0",
     "material-symbols": "^0.45.9",
     "subset-font": "^2.5.0",
     "tailwindcss": "^4.1.14",
