@@ -30,12 +30,8 @@ describe("release artifact allowlist", () => {
     await writeFile(target, content);
   }
 
-  function pngHeader(size: number): Buffer {
-    const content = Buffer.alloc(24);
-    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(content);
-    content.writeUInt32BE(size, 16);
-    content.writeUInt32BE(size, 20);
-    return content;
+  async function writePublicAsset(path: string): Promise<void> {
+    await write(path, await readFile(join(process.cwd(), "public", path)));
   }
 
   async function writeValidArtifact(): Promise<void> {
@@ -53,14 +49,14 @@ describe("release artifact allowlist", () => {
       write("sw.js"),
       write(".vite/manifest.json", "{}"),
       write("workbox-example.js"),
-      write("icons/apple-touch-icon.png", pngHeader(180)),
+      writePublicAsset("icons/apple-touch-icon.png"),
       write("icons/eduplanner-icon.svg", "<svg></svg>"),
-      write("icons/eduplanner-icon-192.png", pngHeader(192)),
-      write("icons/eduplanner-icon-512.png", pngHeader(512)),
+      writePublicAsset("icons/eduplanner-icon-192.png"),
+      writePublicAsset("icons/eduplanner-icon-512.png"),
       write("icons/eduplanner-maskable.svg", "<svg></svg>"),
-      write("icons/eduplanner-maskable-192.png", pngHeader(192)),
-      write("icons/eduplanner-maskable-512.png", pngHeader(512)),
-      write("icons/favicon-32.png", pngHeader(32)),
+      writePublicAsset("icons/eduplanner-maskable-192.png"),
+      writePublicAsset("icons/eduplanner-maskable-512.png"),
+      writePublicAsset("icons/favicon-32.png"),
       write(
         "THIRD_PARTY_NOTICES.txt",
         [
@@ -149,11 +145,14 @@ describe("release artifact allowlist", () => {
     expect(result.fileCount).toBe(18);
   });
 
-  it("rejects missing or incorrectly sized PWA icon PNGs", () => {
+  it("rejects malformed or incorrectly sized PWA icon PNGs", async () => {
+    const wrongSize = await readFile(
+      join(process.cwd(), "public/icons/eduplanner-icon-512.png"),
+    );
     expect(
       inspectPngDimensions(
         "icons/eduplanner-icon-192.png",
-        pngHeader(512),
+        wrongSize,
         192,
       ),
     ).not.toHaveLength(0);
@@ -161,6 +160,17 @@ describe("release artifact allowlist", () => {
       inspectPngDimensions(
         "icons/eduplanner-icon-192.png",
         Buffer.from("not a png"),
+        192,
+      ),
+    ).not.toHaveLength(0);
+    const truncatedPng = Buffer.alloc(24);
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(truncatedPng);
+    truncatedPng.writeUInt32BE(192, 16);
+    truncatedPng.writeUInt32BE(192, 20);
+    expect(
+      inspectPngDimensions(
+        "icons/eduplanner-icon-192.png",
+        truncatedPng,
         192,
       ),
     ).not.toHaveLength(0);

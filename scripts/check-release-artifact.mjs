@@ -128,7 +128,7 @@ export function inspectPngDimensions(path, content, expectedSize) {
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
   if (
     !Buffer.isBuffer(content) ||
-    content.length < 24 ||
+    content.length < 45 ||
     !content.subarray(0, 8).equals(signature)
   ) {
     return [
@@ -136,8 +136,70 @@ export function inspectPngDimensions(path, content, expectedSize) {
     ];
   }
 
-  const width = content.readUInt32BE(16);
-  const height = content.readUInt32BE(20);
+  let offset = signature.length;
+  let width;
+  let height;
+  let sawHeader = false;
+  let sawImageData = false;
+  let sawEnd = false;
+
+  while (offset < content.length) {
+    if (offset + 12 > content.length) {
+      return [
+        finding(path, "invalid-pwa-icon", "required PWA icon has a truncated PNG chunk"),
+      ];
+    }
+
+    const dataLength = content.readUInt32BE(offset);
+    const chunkEnd = offset + 12 + dataLength;
+    if (chunkEnd > content.length) {
+      return [
+        finding(path, "invalid-pwa-icon", "required PWA icon has a truncated PNG chunk"),
+      ];
+    }
+
+    const type = content.toString("ascii", offset + 4, offset + 8);
+    const typeAndData = content.subarray(offset + 4, offset + 8 + dataLength);
+    const expectedCrc = content.readUInt32BE(offset + 8 + dataLength);
+    if (pngCrc32(typeAndData) !== expectedCrc) {
+      return [
+        finding(path, "invalid-pwa-icon", `required PWA icon has an invalid ${type} chunk CRC`),
+      ];
+    }
+
+    if (!sawHeader) {
+      if (type !== "IHDR" || dataLength !== 13) {
+        return [
+          finding(path, "invalid-pwa-icon", "required PWA icon must begin with a valid IHDR chunk"),
+        ];
+      }
+      width = content.readUInt32BE(offset + 8);
+      height = content.readUInt32BE(offset + 12);
+      sawHeader = true;
+    } else if (type === "IHDR") {
+      return [
+        finding(path, "invalid-pwa-icon", "required PWA icon contains multiple IHDR chunks"),
+      ];
+    } else if (type === "IDAT") {
+      sawImageData = true;
+    } else if (type === "IEND") {
+      if (dataLength !== 0 || chunkEnd !== content.length) {
+        return [
+          finding(path, "invalid-pwa-icon", "required PWA icon must end with a valid IEND chunk"),
+        ];
+      }
+      sawEnd = true;
+    }
+
+    offset = chunkEnd;
+  }
+
+  if (!sawHeader || !sawImageData || !sawEnd) {
+    return [
+      finding(path, "invalid-pwa-icon", "required PWA icon must contain IHDR, IDAT, and IEND chunks"),
+    ];
+  }
+
   if (width !== expectedSize || height !== expectedSize) {
     return [
       finding(
@@ -149,6 +211,17 @@ export function inspectPngDimensions(path, content, expectedSize) {
   }
 
   return [];
+}
+
+function pngCrc32(content) {
+  let crc = 0xffffffff;
+  for (const byte of content) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) {
+      crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+    }
+  }
+  return (crc ^ 0xffffffff) >>> 0;
 }
 
 export function inspectArtifactPath(filePath) {
