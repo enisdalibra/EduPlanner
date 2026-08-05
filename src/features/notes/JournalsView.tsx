@@ -26,7 +26,7 @@ type NoteType = 'guru' | 'evaluasi';
 
 export function JournalsView() {
   const notes = useLiveQuery(() => db.notes.where('type').equals('guru').reverse().sortBy('createdAt'), []);
-  const classes = useLiveQuery(() => db.classes.toArray());
+  const classes = useLiveQuery(() => db.classes.filter((cls) => !cls.archivedAt).toArray());
   const subjects = useLiveQuery(() => db.subjects.toArray());
 
   const { t, language } = useTranslation();
@@ -41,19 +41,19 @@ export function JournalsView() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("none");
   const [editorMode, setEditorMode] = useState<"write" | "preview">("write");
 
-  const allStudents = useLiveQuery(() => db.students.toArray());
+  const enrollments = useLiveQuery(() => db.classEnrollments.toArray());
 
   // Filter subjects that have at least one student from the selected class assigned to them
   const availableSubjects = useMemo(() => {
-    if (selectedClassId === "all" || !subjects || !allStudents) return subjects || [];
+    if (selectedClassId === "all" || !subjects || !enrollments) return subjects || [];
     
     // IDs of students in the currently selected class
-    const classStudentIds = new Set(allStudents.filter(s => s.classId === selectedClassId).map(s => s.id));
+    const classStudentIds = new Set(enrollments.filter((item) => item.classId === selectedClassId && !item.endedAt).map(({ studentId }) => studentId));
     
     return subjects.filter(subject => {
       return (subject.assignedStudents || []).some(id => classStudentIds.has(id));
     });
-  }, [subjects, selectedClassId, allStudents]);
+  }, [subjects, selectedClassId, enrollments]);
 
   // Reset subject if not available for this class
   useEffect(() => {

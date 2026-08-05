@@ -15,7 +15,7 @@ const counts = Object.fromEntries(
 const legacyInspection: BackupInspection = {
   source: "legacy",
   sourceVersion: 0,
-  targetVersion: 1,
+  targetVersion: 2,
   warnings: [{
     code: "initialized-empty-table",
     table: "schedules",
@@ -48,7 +48,7 @@ describe("RestorePreviewDialog", () => {
 
     expect(screen.getByText("Tinjau Restore Backup")).toBeInTheDocument();
     expect(screen.getByText("Format legacy")).toBeInTheDocument();
-    expect(screen.getByText("0 → 1")).toBeInTheDocument();
+    expect(screen.getByText("0 → 2")).toBeInTheDocument();
     expect(screen.getByText("Valid")).toBeInTheDocument();
     expect(screen.getByText(/Tabel Jadwal tidak tersedia/)).toBeInTheDocument();
     expect(screen.getAllByText(/^\d+$/)).toHaveLength(BACKUP_TABLE_NAMES.length + 1);

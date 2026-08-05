@@ -10,6 +10,8 @@ import type {
   StudentNote,
   Task,
   TeachingSession,
+  AcademicPeriod,
+  ClassEnrollment,
 } from '@/db/database';
 
 export class ValidationError extends Error {
@@ -50,11 +52,6 @@ export function validateStudent(student: Partial<Student>, isUpdate = false) {
       throw new ValidationError('Student name is required');
     }
     assertMaxLength(student.name, 'Student name', INPUT_LIMITS.personName);
-  }
-  if (!isUpdate || student.classId !== undefined) {
-    if (!student.classId) {
-      throw new ValidationError('Class ID is required for student');
-    }
   }
   if (!isUpdate || student.nis !== undefined) {
     if (!student.nis || student.nis.trim() === '') {
@@ -126,7 +123,41 @@ export function validateClass(cls: Partial<Class>, isUpdate = false) {
     }
     assertMaxLength(cls.name, 'Class name', INPUT_LIMITS.entityName);
   }
+  if (!isUpdate || cls.academicPeriodId !== undefined) {
+    if (!cls.academicPeriodId) throw new ValidationError('Academic period is required for class');
+  }
   assertMaxLength(cls.description, 'Class description', INPUT_LIMITS.description);
+}
+
+export function validateAcademicPeriod(period: Partial<AcademicPeriod>, isUpdate = false) {
+  if (!isUpdate || period.name !== undefined) {
+    if (!period.name?.trim()) throw new ValidationError('Academic period name is required');
+    assertMaxLength(period.name, 'Academic period name', INPUT_LIMITS.entityName);
+  }
+  for (const field of ['startDate', 'endDate'] as const) {
+    if ((!isUpdate || period[field] !== undefined) && !/^\d{4}-\d{2}-\d{2}$/.test(period[field] ?? '')) {
+      throw new ValidationError(`Academic period ${field} must be in YYYY-MM-DD format`);
+    }
+  }
+  if (period.startDate && period.endDate && period.startDate > period.endDate) {
+    throw new ValidationError('Academic period start date must not be after end date');
+  }
+}
+
+export function validateClassEnrollment(enrollment: Partial<ClassEnrollment>) {
+  if (!enrollment.studentId) throw new ValidationError('Student ID is required for enrollment');
+  if (!enrollment.classId) throw new ValidationError('Class ID is required for enrollment');
+  if (!enrollment.enrolledAt || !/^\d{4}-\d{2}-\d{2}$/.test(enrollment.enrolledAt)) {
+    throw new ValidationError('Enrollment date must be in YYYY-MM-DD format');
+  }
+  if (enrollment.endedAt !== undefined) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(enrollment.endedAt)) {
+      throw new ValidationError('Enrollment end date must be in YYYY-MM-DD format');
+    }
+    if (enrollment.endedAt < enrollment.enrolledAt) {
+      throw new ValidationError('Enrollment end date must not precede enrollment date');
+    }
+  }
 }
 
 export function validateSubject(subject: Partial<Subject>, isUpdate = false) {

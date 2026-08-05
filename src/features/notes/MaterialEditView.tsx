@@ -60,9 +60,9 @@ export function MaterialEditView() {
     () => (isNew ? Promise.resolve(undefined) : db.notes.get(id!)),
     [id, isNew]
   );
-  const classes = useLiveQuery(() => db.classes.toArray());
+  const classes = useLiveQuery(() => db.classes.filter((cls) => !cls.archivedAt).toArray());
   const subjects = useLiveQuery(() => db.subjects.toArray());
-  const allStudents = useLiveQuery(() => db.students.toArray());
+  const enrollments = useLiveQuery(() => db.classEnrollments.toArray());
 
   // ── Form state ───────────────────────────────────────────────────────────────
   const [title, setTitle] = useState("");
@@ -107,14 +107,14 @@ export function MaterialEditView() {
 
   // ── Available subjects for selected class ───────────────────────────────────
   const availableSubjects = useMemo(() => {
-    if (classId === "all" || !subjects || !allStudents) return subjects || [];
+    if (classId === "all" || !subjects || !enrollments) return subjects || [];
     const classStudentIds = new Set(
-      allStudents.filter((s) => s.classId === classId).map((s) => s.id)
+      enrollments.filter((item) => item.classId === classId && !item.endedAt).map(({ studentId }) => studentId)
     );
     return subjects.filter((subj) =>
       (subj.assignedStudents || []).some((sid) => classStudentIds.has(sid))
     );
-  }, [subjects, classId, allStudents]);
+  }, [subjects, classId, enrollments]);
 
   // Reset subject if no longer available
   useEffect(() => {

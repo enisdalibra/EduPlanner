@@ -5,7 +5,7 @@ import type { Class, Schedule, Subject, Task } from '@/db/database';
 import { useCalendarModel } from '@/features/calendar/hooks/useCalendarModel';
 
 describe('useCalendarModel', () => {
-  const classes: Class[] = [{ id: 'class-1', name: 'Class 1' }];
+  const classes: Class[] = [{ id: 'class-1', name: 'Class 1', academicPeriodId: 'period-1' }];
   const subjects: Subject[] = [{ id: 'subject-1', name: 'Math' }];
   const tasks: Task[] = [
     { id: 'task-1', title: 'Selected', date: '2026-07-20', status: 'pending' },

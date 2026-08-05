@@ -51,23 +51,27 @@ export function useDashboardStats(chartMonths: 6 | 12, language: 'id' | 'en') {
   const stats = useLiveQuery(async () => {
     const now = new Date();
     const today = format(now, 'yyyy-MM-dd');
-    const [classesCount, studentsCount, notes, tasks, grades, attendances, schedules, teachingSessions, classes, subjects] = await Promise.all([
-      db.classes.count(),
-      db.students.count(),
+    const [classes, enrollments, notes, tasks, grades, attendances, schedules, teachingSessions, subjects] = await Promise.all([
+      db.classes.toArray(),
+      db.classEnrollments.toArray(),
       db.notes.toArray(),
       db.tasks.toArray(),
       db.grades.toArray(),
       db.attendances.where('date').equals(today).toArray(),
       db.schedules.toArray(),
       db.teachingSessions.toArray(),
-      db.classes.toArray(),
       db.subjects.toArray(),
     ]);
+    const activeClassIds = new Set(classes.filter((cls) => !cls.archivedAt).map(({ id }) => id));
+    const activeStudentIds = new Set(enrollments.filter((item) => !item.endedAt && activeClassIds.has(item.classId)).map(({ studentId }) => studentId));
+    const studentsCount = activeStudentIds.size;
+    const classesCount = activeClassIds.size;
 
-    const presentToday = attendances.filter((attendance) => attendance.status === 'hadir').length;
-    const attendancePercent = studentsCount ? (presentToday / studentsCount) * 100 : 0;
+    const presentToday = new Set(attendances.filter((attendance) => attendance.status === 'hadir').map(({ studentId }) => studentId)).size;
+    const recordedToday = new Set(attendances.map(({ studentId }) => studentId)).size;
+    const attendancePercent = studentsCount ? Math.min(100, (presentToday / studentsCount) * 100) : 0;
     const attendanceOthersPercent = studentsCount
-      ? ((attendances.length - presentToday) / studentsCount) * 100
+      ? Math.min(100, ((recordedToday - presentToday) / studentsCount) * 100)
       : 0;
     const studentsWithGrades = new Set(grades.map((grade) => grade.studentId)).size;
     const gradesPercent = studentsCount ? (studentsWithGrades / studentsCount) * 100 : 0;

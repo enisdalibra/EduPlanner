@@ -40,6 +40,8 @@ const TABLE_TRANSLATION_KEYS: Record<BackupTableName, string> = {
   teachingSessions: "settings.previewTableTeachingSessions",
   studentNotes: "settings.previewTableStudentNotes",
   schedules: "settings.previewTableSchedules",
+  academicPeriods: "settings.previewTableAcademicPeriods",
+  classEnrollments: "settings.previewTableClassEnrollments",
 };
 
 export function RestorePreviewDialog({

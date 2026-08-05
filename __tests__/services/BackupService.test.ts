@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => {
     "teachingSessions",
     "studentNotes",
     "schedules",
+    "academicPeriods",
+    "classEnrollments",
   ] as const;
   const tables = Object.fromEntries(
     tableNames.map((name) => [
@@ -38,7 +40,7 @@ const mocks = vi.hoisted(() => {
 
 vi.mock("@/db/database", () => ({
   db: {
-    verno: 7,
+    verno: 8,
     table: (name: (typeof mocks.tableNames)[number]) => mocks.tables[name],
     transaction: mocks.transaction,
   },
@@ -63,8 +65,11 @@ function currentBackup(overrides: Record<string, unknown> = {}): TestBackup {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     exportedAt: "2026-07-19T00:00:00.000Z",
-    databaseVersion: 7,
-    data: Object.fromEntries(BACKUP_TABLE_NAMES.map((name) => [name, []])),
+    databaseVersion: 8,
+    data: {
+      ...Object.fromEntries(BACKUP_TABLE_NAMES.map((name) => [name, []])),
+      academicPeriods: [{ id: 'period-1', name: '2026/2027', startDate: '2026-07-01', endDate: '2027-06-30', isActive: true }],
+    },
     ...overrides,
   } as TestBackup;
 }
@@ -93,7 +98,7 @@ describe("BackupService", () => {
 
     expect(payload.format).toBe(BACKUP_FORMAT);
     expect(payload.version).toBe(BACKUP_VERSION);
-    expect(payload.databaseVersion).toBe(7);
+    expect(payload.databaseVersion).toBe(8);
     expect(Object.keys(payload.data)).toEqual(BACKUP_TABLE_NAMES);
     for (const name of BACKUP_TABLE_NAMES) {
       expect(payload.data[name]).toEqual([{ id: `${name}-1` }]);
@@ -104,13 +109,13 @@ describe("BackupService", () => {
 
   it("atomically replaces all tables and restores date values", async () => {
     const backup = currentBackup();
-    backup.data.classes = [{ id: "class-1", name: "Class 1" }];
+    backup.data.classes = [{ id: "class-1", name: "Class 1", academicPeriodId: 'period-1' }];
     backup.data.students = [{
       id: "student-1",
-      classId: "class-1",
       name: "Student 1",
       nis: "NIS-1",
     }];
+    backup.data.classEnrollments = [{ id: 'enrollment-1', classId: 'class-1', studentId: 'student-1', enrolledAt: '2026-07-01' }];
     backup.data.notes = [{
       id: "note-1",
       title: "Catatan",
@@ -241,14 +246,14 @@ describe("BackupService", () => {
   it("rejects duplicate IDs and invalid domain fields before changing data", async () => {
     const duplicateBackup = currentBackup();
     duplicateBackup.data.classes = [
-      { id: "class-1", name: "Class 1" },
-      { id: "class-1", name: "Class 2" },
+      { id: "class-1", name: "Class 1", academicPeriodId: 'period-1' },
+      { id: "class-1", name: "Class 2", academicPeriodId: 'period-1' },
     ];
     await expect(BackupService.restoreExportPayload(duplicateBackup)).rejects.toThrow(/duplicate id/);
 
     const invalidStudentBackup = currentBackup();
     invalidStudentBackup.data.students = [
-      { id: "student-1", classId: "class-1", name: "Budi", nis: 101 },
+      { id: "student-1", name: "Budi", nis: 101 },
     ];
     await expect(BackupService.restoreExportPayload(invalidStudentBackup)).rejects.toThrow(/"nis" field/);
     expect(mocks.transaction).not.toHaveBeenCalled();
@@ -256,7 +261,7 @@ describe("BackupService", () => {
 
   it("rejects over-limit user content before changing data", async () => {
     const backup = currentBackup();
-    backup.data.classes = [{ id: "class-1", name: "x".repeat(121) }];
+    backup.data.classes = [{ id: "class-1", name: "x".repeat(121), academicPeriodId: 'period-1' }];
 
     await expect(BackupService.restoreExportPayload(backup)).rejects.toThrow(
       /must not exceed 120 characters/,
@@ -266,39 +271,30 @@ describe("BackupService", () => {
 
   it("rejects relationally invalid backups before opening a write transaction", async () => {
     const backup = currentBackup();
-    backup.data.students = [{
-      id: "student-1",
-      classId: "missing-class",
-      name: "Student 1",
-      nis: "NIS-1",
-    }];
+    backup.data.students = [{ id: "student-1", name: "Student 1", nis: "NIS-1" }];
+    backup.data.classEnrollments = [{ id: 'enrollment-1', classId: 'missing-class', studentId: 'student-1', enrolledAt: '2026-07-01' }];
 
     await expect(BackupService.restoreExportPayload(backup)).rejects.toThrow(
-      /students.classId references missing classes/,
+      /classEnrollments.classId references missing classes/,
     );
     expect(mocks.transaction).not.toHaveBeenCalled();
   });
 
   it("fails the restore transaction when read-back integrity differs from the candidate", async () => {
     const backup = currentBackup();
-    backup.data.classes = [{ id: "class-1", name: "Class 1" }];
+    backup.data.classes = [{ id: "class-1", name: "Class 1", academicPeriodId: 'period-1' }];
     backup.data.students = [{
       id: "student-1",
-      classId: "class-1",
       name: "Student 1",
       nis: "NIS-1",
     }];
-    mocks.tables.students.bulkAdd.mockImplementationOnce(async () => {
-      mocks.records.students.push({
-        id: "student-corrupted",
-        classId: "missing-class",
-        name: "Corrupted",
-        nis: "CORRUPTED-1",
-      });
+    backup.data.classEnrollments = [{ id: 'enrollment-1', classId: 'class-1', studentId: 'student-1', enrolledAt: '2026-07-01' }];
+    mocks.tables.classEnrollments.bulkAdd.mockImplementationOnce(async () => {
+      mocks.records.classEnrollments.push({ id: 'corrupted', classId: 'missing-class', studentId: 'student-1', enrolledAt: '2026-07-01' });
     });
 
     await expect(BackupService.restoreExportPayload(backup)).rejects.toThrow(
-      /students.classId references missing classes/,
+      /classEnrollments.classId references missing classes/,
     );
     expect(mocks.transaction).toHaveBeenCalledWith("rw", expect.any(Array), expect.any(Function));
   });
@@ -338,7 +334,7 @@ describe("BackupService", () => {
       value: unknown;
       message: RegExp;
     }> = [
-      { table: "classes", value: [{ id: "class-1", name: " " }], message: /empty "name"/ },
+      { table: "classes", value: [{ id: "class-1", name: " ", academicPeriodId: 'period-1' }], message: /empty "name"/ },
       {
         table: "grades",
         value: [{ id: "grade-1", classId: "class-1", studentId: "student-1", evaluationName: "Kuis", score: Number.NaN }],

@@ -10,6 +10,8 @@ import type {
   Subject,
   Task,
   TeachingSession,
+  AcademicPeriod,
+  ClassEnrollment,
 } from "@/db/database";
 import {
   BackupValidationError,
@@ -52,6 +54,8 @@ function toIntegritySnapshot(data: BackupData): IntegritySnapshot {
     teachingSessions: data.teachingSessions as unknown as TeachingSession[],
     studentNotes: data.studentNotes as unknown as StudentNote[],
     schedules: data.schedules as unknown as Schedule[],
+    academicPeriods: data.academicPeriods as unknown as AcademicPeriod[],
+    classEnrollments: data.classEnrollments as unknown as ClassEnrollment[],
   };
 }
 

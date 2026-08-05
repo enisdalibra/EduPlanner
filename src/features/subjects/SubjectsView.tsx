@@ -19,8 +19,9 @@ import { INPUT_LIMITS } from "@/lib/validation";
 
 export function SubjectsView() {
   const subjects = useLiveQuery(() => db.subjects.toArray());
-  const classes = useLiveQuery(() => db.classes.toArray());
+  const classes = useLiveQuery(() => db.classes.filter((cls) => !cls.archivedAt).toArray());
   const students = useLiveQuery(() => db.students.toArray());
+  const enrollments = useLiveQuery(() => db.classEnrollments.toArray());
 
   const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -231,7 +232,11 @@ export function SubjectsView() {
                       <div className="divide-y divide-gray-100 dark:divide-gray-700/60">
                          {selectedSubject.assignedStudents.map((studentId) => {
                             const student = students?.find(s => s.id === studentId);
-                            const className = classes?.find(c => c.id === student?.classId)?.name;
+                            const className = enrollments
+                              ?.filter((item) => item.studentId === studentId && !item.endedAt)
+                              .map((item) => classes?.find((cls) => cls.id === item.classId)?.name)
+                              .filter(Boolean)
+                              .join(', ');
                             
                             if (!student) return null;
 

@@ -108,9 +108,19 @@ removed. Download a current JSON backup before this destructive action.
 For larger classes, use the `.xlsx` workflow described in
 [Importing Students](importing-students.md). The import requires an existing
 target class and supports explicit duplicate-NIS policies.
+When an imported NIS already exists, the preview marks it for linking and the
+existing student profile receives an additional class enrollment.
 
 Deleting a student also removes that student's attendance, grades, notes, and
 subject-enrollment references. Back up first if those records may be needed.
+
+### Academic periods and class promotion
+
+Create or select an academic period from **Classes** before creating a class.
+A student can be enrolled in several classes during the same period. Use
+**Promote** on a source class to map each student to zero, one, or several
+classes in the target period. The confirmation can archive the source class;
+archived classes preserve their academic history in read-only mode.
 
 ## Record attendance
 

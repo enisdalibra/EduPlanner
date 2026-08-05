@@ -21,7 +21,6 @@ describe('user input length limits', () => {
       validateStudent({
         name: text(INPUT_LIMITS.personName),
         nis: text(INPUT_LIMITS.identifier),
-        classId: 'class-1',
       }),
     ).not.toThrow();
     expect(() =>
@@ -34,8 +33,8 @@ describe('user input length limits', () => {
   });
 
   it.each([
-    ['student name', () => validateStudent({ name: text(INPUT_LIMITS.personName + 1), nis: '1', classId: 'c1' })],
-    ['student NIS', () => validateStudent({ name: 'Student', nis: text(INPUT_LIMITS.identifier + 1), classId: 'c1' })],
+    ['student name', () => validateStudent({ name: text(INPUT_LIMITS.personName + 1), nis: '1' })],
+    ['student NIS', () => validateStudent({ name: 'Student', nis: text(INPUT_LIMITS.identifier + 1) })],
     ['class name', () => validateClass({ name: text(INPUT_LIMITS.entityName + 1) })],
     ['class description', () => validateClass({ name: 'Class', description: text(INPUT_LIMITS.description + 1) })],
     ['subject name', () => validateSubject({ name: text(INPUT_LIMITS.entityName + 1) })],

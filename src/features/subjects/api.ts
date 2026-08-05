@@ -72,12 +72,15 @@ export async function deleteSubject(id: string) {
 }
 
 export async function assignClassToSubject(subjectId: string, classId: string): Promise<string[]> {
-  return db.transaction('rw', [db.subjects, db.classes, db.students], async () => {
+  return db.transaction('rw', [db.subjects, db.classes, db.students, db.classEnrollments], async () => {
     const subject = await db.subjects.get(subjectId);
     if (!subject) throw new DomainNotFoundError('Subject', subjectId);
     if (!(await db.classes.get(classId))) throw new DomainNotFoundError('Class', classId);
 
-    const classStudents = await db.students.where('classId').equals(classId).toArray();
+    const enrollments = await db.classEnrollments.where('classId').equals(classId).toArray();
+    const classStudents = (await db.students.bulkGet(
+      enrollments.filter((item) => !item.endedAt).map(({ studentId }) => studentId),
+    )).filter((student): student is NonNullable<typeof student> => Boolean(student));
     const assignedStudents = [
       ...new Set([...(subject.assignedStudents ?? []), ...classStudents.map((student) => student.id)]),
     ];

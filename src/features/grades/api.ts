@@ -2,6 +2,7 @@ import Dexie from 'dexie';
 import { db, type Grade } from '@/db/database';
 import { assertAcademicRelations } from '@/lib/academicRelations';
 import { validateGrade, ValidationError } from '@/lib/validation';
+import { assertClassWritable } from '@/lib/classAccess';
 
 export async function getGradesByClass(classId: string, subjectId?: string) {
    if (subjectId && subjectId !== 'none') {
@@ -20,7 +21,7 @@ export async function saveGrade(classId: string, studentId: string, evaluationNa
 
    await db.transaction(
      'rw',
-     [db.grades, db.classes, db.students, db.subjects],
+     [db.grades, db.classes, db.students, db.subjects, db.classEnrollments],
      async () => {
        await assertAcademicRelations(db, { classId, studentId, subjectId });
 
@@ -129,7 +130,8 @@ export async function renameEvaluation(
   validateGrade({ evaluationName: normalizedNewName }, true);
   if (normalizedOldName === normalizedNewName) return 0;
 
-  return db.transaction('rw', db.grades, async () => {
+  return db.transaction('rw', [db.grades, db.classes], async () => {
+    await assertClassWritable(db, classId);
     const [sourceGrades, targetGrades] = await Promise.all([
       getGradesForEvaluation(
         classId,
@@ -161,6 +163,7 @@ export async function renameEvaluation(
 }
 
 export async function deleteEvaluation(classId: string, evaluationName: string, subjectId?: string) {
+  await assertClassWritable(db, classId);
   if (subjectId && subjectId !== 'none') {
     const grades = await db.grades.where('[classId+subjectId+evaluationName]').equals([classId, subjectId, evaluationName]).toArray();
     await Promise.all(grades.map(g => db.grades.delete(g.id)));

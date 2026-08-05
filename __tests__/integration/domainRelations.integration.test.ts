@@ -9,13 +9,13 @@ import { deleteTestDatabase, resetTestDatabase } from './testDatabase';
 describe('referentially safe content and subject writes', () => {
   beforeEach(async () => {
     await resetTestDatabase();
-    await db.classes.add({ id: 'class-a', name: 'Class A' });
+    await db.classes.add({ id: 'class-a', name: 'Class A', academicPeriodId: 'period-test' });
     await db.students.add({
       id: 'student-a',
-      classId: 'class-a',
       name: 'Student A',
       nis: 'A-1',
     });
+    await db.classEnrollments.add({ id: 'enrollment-a', classId: 'class-a', studentId: 'student-a', enrolledAt: '2026-07-01' });
     await db.subjects.add({ id: 'subject-a', name: 'Biology' });
   });
 

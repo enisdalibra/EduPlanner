@@ -2,6 +2,7 @@ import { db, type Note } from '@/db/database';
 import { validateNote } from '@/lib/validation';
 import { DomainNotFoundError } from '@/lib/domainErrors';
 import { assertOptionalClassSubjectRelations } from '@/lib/domainRelations';
+import { assertClassWritable } from '@/lib/classAccess';
 
 export type NoteUpdate = Partial<Omit<Note, 'id' | 'createdAt'>>;
 
@@ -27,6 +28,7 @@ export async function createNote(title: string, content: string, type: 'guru' | 
   };
   return db.transaction('rw', [db.notes, db.classes, db.subjects], async () => {
     await assertOptionalClassSubjectRelations(db, note);
+    if (classId) await assertClassWritable(db, classId);
     await db.notes.add(note);
     return note;
   });
@@ -35,15 +37,20 @@ export async function createNote(title: string, content: string, type: 'guru' | 
 export async function updateNote(id: string, updates: NoteUpdate) {
   validateNote(updates, true);
   await db.transaction('rw', [db.notes, db.classes, db.subjects], async () => {
-    if (!(await db.notes.get(id))) throw new DomainNotFoundError('Note', id);
+    const current = await db.notes.get(id);
+    if (!current) throw new DomainNotFoundError('Note', id);
+    if (current.classId) await assertClassWritable(db, current.classId);
+    if (updates.classId) await assertClassWritable(db, updates.classId);
     await assertOptionalClassSubjectRelations(db, updates);
     await db.notes.update(id, updates);
   });
 }
 
 export async function deleteNote(id: string) {
-  await db.transaction('rw', [db.notes, db.teachingSessions], async () => {
-    if (!(await db.notes.get(id))) throw new DomainNotFoundError('Note', id);
+  await db.transaction('rw', [db.notes, db.teachingSessions, db.classes], async () => {
+    const note = await db.notes.get(id);
+    if (!note) throw new DomainNotFoundError('Note', id);
+    if (note.classId) await assertClassWritable(db, note.classId);
 
     // Preserve teaching history while removing the optional link to the note.
     // `noteId` is not indexed, so the cleanup must use a filtered collection.

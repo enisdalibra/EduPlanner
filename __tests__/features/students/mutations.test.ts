@@ -7,6 +7,10 @@ const mocks = vi.hoisted(() => ({
   studentUpdate: vi.fn(),
   studentBulkAdd: vi.fn(),
   studentToArray: vi.fn(),
+  studentFirst: vi.fn(),
+  enrollmentFirst: vi.fn(),
+  enrollmentAdd: vi.fn(),
+  enrollmentUpdate: vi.fn(),
   studentNoteAdd: vi.fn(),
   transaction: vi.fn(),
 }));
@@ -19,7 +23,15 @@ vi.mock('@/db/database', () => ({
       add: mocks.studentAdd,
       update: mocks.studentUpdate,
       bulkAdd: mocks.studentBulkAdd,
-      where: vi.fn(() => ({ anyOf: vi.fn(() => ({ toArray: mocks.studentToArray })) })),
+      where: vi.fn(() => ({
+        equals: vi.fn(() => ({ first: mocks.studentFirst })),
+        anyOf: vi.fn(() => ({ toArray: mocks.studentToArray })),
+      })),
+    },
+    classEnrollments: {
+      where: vi.fn(() => ({ equals: vi.fn(() => ({ first: mocks.enrollmentFirst })) })),
+      add: mocks.enrollmentAdd,
+      update: mocks.enrollmentUpdate,
     },
     studentNotes: { add: mocks.studentNoteAdd },
     attendances: {},
@@ -48,21 +60,22 @@ describe('student mutation API', () => {
     mocks.classGet.mockResolvedValue({ id: 'c1', name: 'Class 1' });
     mocks.studentGet.mockResolvedValue({ id: 's1', classId: 'c1', name: 'Budi', nis: '101' });
     mocks.studentToArray.mockResolvedValue([]);
+    mocks.studentFirst.mockResolvedValue(undefined);
+    mocks.enrollmentFirst.mockResolvedValue(undefined);
   });
 
   it('creates and updates students through a class-aware transaction', async () => {
     const created = await createStudent('c1', 'Budi', '101');
-    expect(created).toMatchObject({ classId: 'c1', name: 'Budi', nis: '101' });
+    expect(created).toMatchObject({ name: 'Budi', nis: '101' });
     expect(mocks.studentAdd).toHaveBeenCalledWith(created);
 
-    await updateStudent('s1', { classId: 'c1', name: 'Budi Baru' });
+    await updateStudent('s1', { name: 'Budi Baru' });
     expect(mocks.studentUpdate).toHaveBeenCalledWith('s1', {
-      classId: 'c1',
       name: 'Budi Baru',
     });
     expect(mocks.transaction).toHaveBeenCalledWith(
       'rw',
-      [db.classes, db.students],
+      db.students,
       expect.any(Function),
     );
   });

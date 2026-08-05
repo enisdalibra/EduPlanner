@@ -1,4 +1,4 @@
-import type { EduPlannerDB, Student } from '@/db/database';
+import type { Class, EduPlannerDB, Student } from '@/db/database';
 import { DomainNotFoundError } from '@/lib/domainErrors';
 import { ValidationError } from '@/lib/validation';
 
@@ -9,7 +9,7 @@ export interface AcademicRelationInput {
 }
 
 export interface AcademicRelationCache {
-  classes: Map<string, boolean>;
+  classes: Map<string, Class | undefined>;
   students: Map<string, Student | undefined>;
   subjects: Map<string, boolean>;
 }
@@ -27,12 +27,13 @@ export async function assertAcademicRelations(
   relation: AcademicRelationInput,
   cache = createAcademicRelationCache(),
 ): Promise<void> {
-  let classExists = cache.classes.get(relation.classId);
-  if (classExists === undefined) {
-    classExists = (await database.classes.get(relation.classId)) !== undefined;
-    cache.classes.set(relation.classId, classExists);
+  let cls = cache.classes.get(relation.classId);
+  if (!cache.classes.has(relation.classId)) {
+    cls = await database.classes.get(relation.classId);
+    cache.classes.set(relation.classId, cls);
   }
-  if (!classExists) throw new DomainNotFoundError('Class', relation.classId);
+  if (!cls) throw new DomainNotFoundError('Class', relation.classId);
+  if (cls.archivedAt) throw new ValidationError(`Class "${relation.classId}" is archived and read-only.`);
 
   let student = cache.students.get(relation.studentId);
   if (!cache.students.has(relation.studentId)) {
@@ -40,9 +41,13 @@ export async function assertAcademicRelations(
     cache.students.set(relation.studentId, student);
   }
   if (!student) throw new DomainNotFoundError('Student', relation.studentId);
-  if (student.classId !== relation.classId) {
+  const enrollment = await database.classEnrollments
+    .where('[classId+studentId]')
+    .equals([relation.classId, relation.studentId])
+    .first();
+  if (!enrollment) {
     throw new ValidationError(
-      `Student "${relation.studentId}" belongs to class "${student.classId}", not "${relation.classId}".`,
+      `Student "${relation.studentId}" has never been enrolled in class "${relation.classId}".`,
     );
   }
 

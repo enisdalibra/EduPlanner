@@ -39,7 +39,7 @@ function currentEnvelope(overrides: Record<string, unknown> = {}) {
 describe("BackupMigrationService", () => {
   it("documents an exact legacy v0 table contract", () => {
     expect([...LEGACY_REQUIRED_TABLES, ...LEGACY_OPTIONAL_TABLES].sort()).toEqual(
-      [...BACKUP_TABLE_NAMES].sort(),
+      BACKUP_TABLE_NAMES.filter((name) => name !== 'academicPeriods' && name !== 'classEnrollments').sort(),
     );
   });
 
@@ -68,7 +68,8 @@ describe("BackupMigrationService", () => {
     expect(result.migration.targetVersion).toBe(BACKUP_VERSION);
     expect(result.migration.initializedEmptyTables).toEqual(LEGACY_OPTIONAL_TABLES);
     expect(result.migration.warnings).toHaveLength(LEGACY_OPTIONAL_TABLES.length);
-    expect(result.data.classes).toEqual([{ id: "class-1", name: "Class 1" }]);
+    expect(result.data.classes).toEqual([expect.objectContaining({ id: "class-1", name: "Class 1", academicPeriodId: expect.any(String) })]);
+    expect(result.data.academicPeriods).toHaveLength(1);
     for (const tableName of LEGACY_OPTIONAL_TABLES) {
       expect(result.data[tableName]).toEqual([]);
       expect(result.migration.warnings).toContainEqual(expect.objectContaining({

@@ -69,7 +69,7 @@ function migrateCurrentEnvelope(value: BackupRecord): RawMigratedBackup {
       `Backup version ${String(value.version)} was created by a newer EduPlanner release. Upgrade the application before restoring it.`,
     );
   }
-  if (value.version !== BACKUP_VERSION) {
+  if (value.version !== 1 && value.version !== BACKUP_VERSION) {
     throw new BackupValidationError(`Unsupported backup version: ${String(value.version)}.`);
   }
   if (!isBackupRecord(value.data)) {
@@ -89,11 +89,14 @@ function migrateCurrentEnvelope(value: BackupRecord): RawMigratedBackup {
     throw new BackupValidationError("Backup database version is missing or invalid.");
   }
 
+  const data = value.version === 1
+    ? migrateMembershipData(value.data as Record<string, unknown>, value.exportedAt as string)
+    : value.data as Record<BackupTableName, unknown>;
   return {
-    data: value.data as Record<BackupTableName, unknown>,
+    data,
     migration: {
       source: "current",
-      sourceVersion: BACKUP_VERSION,
+      sourceVersion: value.version as number,
       targetVersion: BACKUP_VERSION,
       exportedAt: value.exportedAt,
       databaseVersion: value.databaseVersion,
@@ -101,6 +104,46 @@ function migrateCurrentEnvelope(value: BackupRecord): RawMigratedBackup {
       initializedEmptyTables: [],
     },
   };
+}
+
+function migrateMembershipData(data: Record<string, unknown>, referenceDate?: string): Record<BackupTableName, unknown> {
+  const date = referenceDate && !Number.isNaN(new Date(referenceDate).getTime())
+    ? new Date(referenceDate)
+    : new Date();
+  const year = date.getUTCMonth() >= 6 ? date.getUTCFullYear() : date.getUTCFullYear() - 1;
+  const periodId = crypto.randomUUID();
+  const startDate = `${year}-07-01`;
+  const endDate = `${year + 1}-06-30`;
+  const classes = Array.isArray(data.classes)
+    ? data.classes.map((item) => isBackupRecord(item) ? { ...item, academicPeriodId: periodId } : item)
+    : data.classes;
+  const classIds = new Set(
+    Array.isArray(classes) ? classes.filter(isBackupRecord).map((item) => String(item.id)) : [],
+  );
+  const enrollments: BackupRecord[] = [];
+  const students = Array.isArray(data.students)
+    ? data.students.map((item) => {
+        if (!isBackupRecord(item)) return item;
+        const student = { ...item };
+        if (typeof student.classId === 'string' && classIds.has(student.classId)) {
+          enrollments.push({
+            id: crypto.randomUUID(),
+            studentId: String(student.id),
+            classId: student.classId,
+            enrolledAt: startDate,
+          });
+        }
+        delete student.classId;
+        return student;
+      })
+    : data.students;
+  return {
+    ...Object.fromEntries(BACKUP_TABLE_NAMES.map((name) => [name, data[name] ?? []])),
+    classes,
+    students,
+    academicPeriods: [{ id: periodId, name: 'Periode Saat Ini', startDate, endDate, isActive: true }],
+    classEnrollments: enrollments,
+  } as Record<BackupTableName, unknown>;
 }
 
 function migrateLegacyV0(value: BackupRecord): RawMigratedBackup {
@@ -134,13 +177,14 @@ function migrateLegacyV0(value: BackupRecord): RawMigratedBackup {
     message: `Legacy backup v0 did not export "${table}"; it will be initialized as an empty table.`,
   }));
 
-  return {
-    data: Object.fromEntries(
+  const legacyData = Object.fromEntries(
       BACKUP_TABLE_NAMES.map((tableName) => [
         tableName,
         hasOwn(value, tableName) ? value[tableName] : [],
       ]),
-    ) as Record<BackupTableName, unknown>,
+    ) as Record<BackupTableName, unknown>;
+  return {
+    data: migrateMembershipData(legacyData),
     migration: {
       source: "legacy",
       sourceVersion: LEGACY_BACKUP_VERSION,

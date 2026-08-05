@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
-import { addStudentsBulk, createStudent, deleteStudent } from "@/features/students/api";
+import { addStudentsBulk, createStudent } from "@/features/students/api";
+import { endEnrollment, getStudentsByClass } from "./api";
 import { recordTeachingSession } from "@/features/teaching/api";
 import { updateNote } from "@/features/notes/api";
 import { ScheduleEditorDialog } from "./components/ScheduleEditorDialog";
@@ -32,7 +33,7 @@ export function ClassDetailView() {
   const currentLocale = language === 'id' ? localeId : localeEn;
   
   const cls = useLiveQuery(() => db.classes.get(id!), [id]);
-  const students = useLiveQuery(() => db.students.where('classId').equals(id!).sortBy('name'), [id]);
+  const students = useLiveQuery(() => getStudentsByClass(id!, Boolean(cls?.archivedAt)), [id, cls?.archivedAt]);
   const subjects = useLiveQuery(() => db.subjects.toArray());
   const teachingSessions = useLiveQuery(() => db.teachingSessions.where('classId').equals(id!).reverse().sortBy('startTime'), [id]);
   const materials = useLiveQuery(() => db.notes.where('[classId+type]').equals([id!, 'materi']).reverse().sortBy('createdAt'), [id]);
@@ -157,6 +158,7 @@ export function ClassDetailView() {
 
   return (
     <div className="space-y-6 view-enter pb-8">
+      {cls.archivedAt && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-800">{language === 'id' ? 'Kelas ini telah diarsipkan. Seluruh data akademik hanya dapat dilihat.' : 'This class is archived. All academic data is read-only.'}</div>}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate('/classes')} className="rounded-xl bg-gray-100 dark:bg-gray-800">
           <Icon name="arrow_back" className="h-5 w-5" />
@@ -190,7 +192,7 @@ export function ClassDetailView() {
             </div>
             <div className="flex flex-wrap gap-3">
               <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                <DialogTrigger render={<Button className="shadow-lg shadow-primary/20" />}>
+                <DialogTrigger render={<Button disabled={Boolean(cls.archivedAt)} className="shadow-lg shadow-primary/20" />}>
                   <Icon name="person_add" className="w-4 h-4 mr-2" />
                   {t('classDetail.newStudent')}
                 </DialogTrigger>
@@ -217,7 +219,7 @@ export function ClassDetailView() {
               </Dialog>
 
               <Dialog open={isBulkOpen} onOpenChange={setIsBulkOpen}>
-                <DialogTrigger render={<Button variant="secondary" />}>
+                <DialogTrigger render={<Button variant="secondary" disabled={Boolean(cls.archivedAt)} />}>
                   <Icon name="upload" className="w-4 h-4 mr-2" />
                   {t('classDetail.pasteBulk')}
                 </DialogTrigger>
@@ -291,7 +293,7 @@ export function ClassDetailView() {
                           className="hover:text-danger"
                           onClick={async () => {
                             if(confirm(t('classDetail.confirmRemove', { name: student.name }))) {
-                              await deleteStudent(student.id);
+                              await endEnrollment(id!, student.id);
                               toast.success(t('classDetail.removedAlert'));
                             }
                           }}

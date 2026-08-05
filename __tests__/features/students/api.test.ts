@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => {
   const attendanceDelete = vi.fn();
   const gradeDelete = vi.fn();
   const studentNoteDelete = vi.fn();
+  const enrollmentDelete = vi.fn();
   const subjectModify = vi.fn<
     (modifier: (subject: TestSubject) => void) => Promise<void>
   >();
@@ -16,6 +17,7 @@ const mocks = vi.hoisted(() => {
     attendanceDelete,
     gradeDelete,
     studentNoteDelete,
+    enrollmentDelete,
     subjectModify,
     studentDelete: vi.fn(),
     attendanceEquals: vi.fn(() => ({ delete: attendanceDelete })),
@@ -24,6 +26,7 @@ const mocks = vi.hoisted(() => {
     attendanceWhere: vi.fn(),
     gradeWhere: vi.fn(),
     studentNoteWhere: vi.fn(),
+    enrollmentWhere: vi.fn(),
     subjectFilter,
     transaction: vi.fn(),
   };
@@ -35,6 +38,7 @@ vi.mock("@/db/database", () => {
     attendances: { where: mocks.attendanceWhere },
     grades: { where: mocks.gradeWhere },
     studentNotes: { where: mocks.studentNoteWhere },
+    classEnrollments: { where: mocks.enrollmentWhere },
     subjects: { filter: mocks.subjectFilter },
     transaction: mocks.transaction,
   };
@@ -51,6 +55,7 @@ describe("Students API", () => {
     mocks.attendanceWhere.mockReturnValue({ equals: mocks.attendanceEquals });
     mocks.gradeWhere.mockReturnValue({ equals: mocks.gradeEquals });
     mocks.studentNoteWhere.mockReturnValue({ equals: mocks.studentNoteEquals });
+    mocks.enrollmentWhere.mockReturnValue({ equals: vi.fn(() => ({ delete: mocks.enrollmentDelete })) });
     mocks.attendanceDelete.mockResolvedValue(undefined);
     mocks.gradeDelete.mockResolvedValue(undefined);
     mocks.studentNoteDelete.mockResolvedValue(undefined);
@@ -67,7 +72,7 @@ describe("Students API", () => {
 
     expect(mocks.transaction).toHaveBeenCalledWith(
       "rw",
-      [db.students, db.attendances, db.grades, db.studentNotes, db.subjects],
+      [db.students, db.classEnrollments, db.attendances, db.grades, db.studentNotes, db.subjects],
       expect.any(Function),
     );
     expect(mocks.attendanceWhere).toHaveBeenCalledWith("studentId");

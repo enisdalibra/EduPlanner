@@ -20,14 +20,17 @@ export function StudentDetailView() {
   const currentLocale = language === 'id' ? localeId : localeEn;
 
   const student = useLiveQuery(() => db.students.get(id || ""));
-  const studentClass = useLiveQuery(
-    () => student ? db.classes.get(student.classId) : undefined,
-    [student]
-  );
+  const studentClasses = useLiveQuery(async () => {
+    if (!student) return [];
+    const enrollments = await db.classEnrollments.where('studentId').equals(student.id).toArray();
+    return (await db.classes.bulkGet(enrollments.map(({ classId }) => classId)))
+      .filter((cls): cls is NonNullable<typeof cls> => Boolean(cls));
+  }, [student]);
   
   const attendances = useLiveQuery(() => db.attendances.where("studentId").equals(id || "").toArray());
   const grades = useLiveQuery(() => db.grades.where("studentId").equals(id || "").toArray());
   const notes = useLiveQuery(() => db.studentNotes.where("studentId").equals(id || "").toArray());
+  const periods = useLiveQuery(() => db.academicPeriods.toArray());
 
   const [newNote, setNewNote] = useState("");
 
@@ -83,9 +86,13 @@ export function StudentDetailView() {
             <h2 className="text-lg font-bold text-slate-800">{student.name}</h2>
             <p className="text-slate-500 font-medium">{student.nis}</p>
             <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2">
-              <span className="inline-flex mx-auto items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10">
-                {studentClass?.name || t('studentsPage.deletedClass')}
-              </span>
+              <div className="flex flex-wrap justify-center gap-1">
+                {studentClasses?.length ? studentClasses.map((cls) => (
+                  <span key={cls.id} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                    {cls.name} · {periods?.find((period) => period.id === cls.academicPeriodId)?.name ?? '-'}
+                  </span>
+                )) : <span className="text-xs text-slate-400">{t('studentsPage.deletedClass')}</span>}
+              </div>
             </div>
           </div>
 
@@ -132,6 +139,7 @@ export function StudentDetailView() {
                   <thead className="table-header">
                     <tr>
                       <th className="px-4 py-2 rounded-l-md">{t('studentDetail.gradeTitle')}</th>
+                      <th className="px-4 py-2">{t('studentsPage.classLabel')}</th>
                       <th className="px-4 py-2 rounded-r-md text-right">{t('studentDetail.gradeScore')}</th>
                     </tr>
                   </thead>
@@ -139,6 +147,7 @@ export function StudentDetailView() {
                     {grades.map(grade => (
                       <tr key={grade.id}>
                         <td className="px-4 py-3 text-slate-900">{grade.evaluationName}</td>
+                        <td className="px-4 py-3 text-slate-500">{studentClasses?.find((cls) => cls.id === grade.classId)?.name ?? '-'}</td>
                         <td className="px-4 py-3 text-right">
                           <span className="font-mono font-medium bg-slate-100 px-2 py-1 rounded">
                             {grade.score}

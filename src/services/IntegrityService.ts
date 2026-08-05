@@ -12,6 +12,8 @@ import {
   type Subject,
   type Task,
   type TeachingSession,
+  type AcademicPeriod,
+  type ClassEnrollment,
 } from '@/db/database';
 
 export const INTEGRITY_TABLE_NAMES = [
@@ -26,6 +28,8 @@ export const INTEGRITY_TABLE_NAMES = [
   'teachingSessions',
   'studentNotes',
   'schedules',
+  'academicPeriods',
+  'classEnrollments',
 ] as const;
 
 export type IntegrityTableName = (typeof INTEGRITY_TABLE_NAMES)[number];
@@ -61,9 +65,11 @@ export interface IntegritySnapshot {
   teachingSessions: TeachingSession[];
   studentNotes: StudentNote[];
   schedules: Schedule[];
+  academicPeriods: AcademicPeriod[];
+  classEnrollments: ClassEnrollment[];
 }
 
-type ReferencedTable = 'classes' | 'students' | 'subjects' | 'notes';
+type ReferencedTable = 'classes' | 'students' | 'subjects' | 'notes' | 'academicPeriods';
 
 function compositeKey(parts: Array<string | undefined>): string {
   return JSON.stringify(parts.map((part) => part ?? null));
@@ -159,19 +165,18 @@ function checkSubjectAssignments(subjects: Subject[], studentIds: Set<string>, i
 function checkStudentClassMismatch(
   table: 'attendances' | 'grades',
   record: Attendance | Grade,
-  studentsById: Map<string, Student>,
+  enrollmentKeys: Set<string>,
   classIds: Set<string>,
   issues: IntegrityIssue[],
 ): void {
-  const student = studentsById.get(record.studentId);
-  if (student && classIds.has(record.classId) && student.classId !== record.classId) {
+  if (classIds.has(record.classId) && !enrollmentKeys.has(compositeKey([record.classId, record.studentId]))) {
     issues.push({
       kind: 'mismatch',
       table,
       recordId: record.id,
       field: 'classId',
       referencedId: record.classId,
-      message: `${table} record "${record.id}" belongs to class "${record.classId}", but student "${student.id}" belongs to class "${student.classId}".`,
+      message: `${table} record "${record.id}" references student "${record.studentId}" without an enrollment in class "${record.classId}".`,
     });
   }
 }
@@ -182,10 +187,21 @@ export function checkIntegritySnapshot(snapshot: IntegritySnapshot): IntegrityRe
   const studentIds = new Set(snapshot.students.map(({ id }) => id));
   const subjectIds = new Set(snapshot.subjects.map(({ id }) => id));
   const noteIds = new Set(snapshot.notes.map(({ id }) => id));
-  const studentsById = new Map(snapshot.students.map((student) => [student.id, student]));
+  const periodIds = new Set(snapshot.academicPeriods.map(({ id }) => id));
+  const enrollmentKeys = new Set(snapshot.classEnrollments.map((item) => compositeKey([item.classId, item.studentId])));
 
-  for (const student of snapshot.students) {
-    addOrphan(issues, 'students', student.id, 'classId', student.classId, 'classes', classIds);
+  const activePeriods = snapshot.academicPeriods.filter((period) => period.isActive);
+  for (const period of activePeriods.slice(1)) {
+    issues.push({ kind: 'duplicate', table: 'academicPeriods', recordId: period.id, field: 'isActive', duplicateOf: activePeriods[0].id, message: 'Only one academic period may be active.' });
+  }
+  for (const cls of snapshot.classes) {
+    addOrphan(issues, 'classes', cls.id, 'academicPeriodId', cls.academicPeriodId, 'academicPeriods', periodIds);
+  }
+  const enrollmentPairs = new Map<string, string>();
+  for (const enrollment of snapshot.classEnrollments) {
+    addOrphan(issues, 'classEnrollments', enrollment.id, 'classId', enrollment.classId, 'classes', classIds);
+    addOrphan(issues, 'classEnrollments', enrollment.id, 'studentId', enrollment.studentId, 'students', studentIds);
+    addDuplicate(issues, 'classEnrollments', enrollment.id, 'classId+studentId', compositeKey([enrollment.classId, enrollment.studentId]), enrollmentPairs);
   }
   checkStudentDuplicates(snapshot.students, issues);
   checkSubjectAssignments(snapshot.subjects, studentIds, issues);
@@ -195,7 +211,7 @@ export function checkIntegritySnapshot(snapshot: IntegritySnapshot): IntegrityRe
     addOrphan(issues, 'attendances', attendance.id, 'classId', attendance.classId, 'classes', classIds);
     addOrphan(issues, 'attendances', attendance.id, 'studentId', attendance.studentId, 'students', studentIds);
     addOrphan(issues, 'attendances', attendance.id, 'subjectId', attendance.subjectId, 'subjects', subjectIds);
-    checkStudentClassMismatch('attendances', attendance, studentsById, classIds, issues);
+    checkStudentClassMismatch('attendances', attendance, enrollmentKeys, classIds, issues);
     addDuplicate(
       issues,
       'attendances',
@@ -211,7 +227,7 @@ export function checkIntegritySnapshot(snapshot: IntegritySnapshot): IntegrityRe
     addOrphan(issues, 'grades', grade.id, 'classId', grade.classId, 'classes', classIds);
     addOrphan(issues, 'grades', grade.id, 'studentId', grade.studentId, 'students', studentIds);
     addOrphan(issues, 'grades', grade.id, 'subjectId', grade.subjectId, 'subjects', subjectIds);
-    checkStudentClassMismatch('grades', grade, studentsById, classIds, issues);
+    checkStudentClassMismatch('grades', grade, enrollmentKeys, classIds, issues);
     addDuplicate(
       issues,
       'grades',
@@ -281,6 +297,8 @@ export async function checkDatabaseIntegrity(database: EduPlannerDB = db): Promi
     teachingSessions: await database.teachingSessions.toArray(),
     studentNotes: await database.studentNotes.toArray(),
     schedules: await database.schedules.toArray(),
+    academicPeriods: await database.academicPeriods.toArray(),
+    classEnrollments: await database.classEnrollments.toArray(),
   }));
 
   return checkIntegritySnapshot(snapshot);

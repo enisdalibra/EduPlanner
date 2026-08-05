@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { Link } from "react-router";
 ;
-import { type Student, type Class } from "@/db/database";
+import { type Student, type Class, type ClassEnrollment } from "@/db/database";
 import { Button } from "@/components/ui/button";
 import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -10,12 +10,13 @@ import { Icon } from "@/components/ui/icon";
 interface StudentTableProps {
   students: Student[] | undefined;
   classes: Class[] | undefined;
+  enrollments: ClassEnrollment[] | undefined;
   t: (key: string) => string;
   onEdit: (student: Student) => void;
   onDelete: (student: Student) => void;
 }
 
-export function StudentTable({ students, classes, t, onEdit, onDelete }: StudentTableProps) {
+export function StudentTable({ students, classes, enrollments, t, onEdit, onDelete }: StudentTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   
   const studentList = students || [];
@@ -52,7 +53,10 @@ export function StudentTable({ students, classes, t, onEdit, onDelete }: Student
             ) : (
               rowVirtualizer.getVirtualItems().map((virtualRow) => {
                 const student = studentList[virtualRow.index];
-                const studentClass = classes?.find(c => c.id === student.classId);
+                const studentClasses = (enrollments ?? [])
+                  .filter((item) => item.studentId === student.id && !item.endedAt)
+                  .map((item) => classes?.find((cls) => cls.id === item.classId))
+                  .filter((cls): cls is Class => Boolean(cls));
                 return (
                   <tr 
                     key={student.id} 
@@ -67,9 +71,13 @@ export function StudentTable({ students, classes, t, onEdit, onDelete }: Student
                     </td>
                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400 w-32 truncate">{student.nis}</td>
                     <td className="px-6 py-4 w-48 truncate">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/10 truncate max-w-full">
-                        {studentClass?.name || t('studentsPage.deletedClass')}
-                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {studentClasses.length ? studentClasses.map((cls) => (
+                          <span key={cls.id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/10">
+                            {cls.name}
+                          </span>
+                        )) : <span className="text-xs text-gray-400">{t('studentsPage.deletedClass')}</span>}
+                      </div>
                     </td>
                     <td className="px-6 py-4 w-32 text-right flex items-center justify-end gap-1">
                       <SimpleTooltip content={t('studentsPage.tooltipProfile')}>

@@ -66,7 +66,9 @@ describe('EduPlannerDB migrations', () => {
 
     expect(current.verno).toBe(CURRENT_DATABASE_VERSION);
     expect(current.tables.map(({ name }) => name).sort()).toEqual([
+      'academicPeriods',
       'attendances',
+      'classEnrollments',
       'classes',
       'grades',
       'notes',
@@ -80,14 +82,14 @@ describe('EduPlannerDB migrations', () => {
     ]);
     expect(await current.classes.get('class-1')).toMatchObject({ name: 'Class 1' });
     expect(await current.students.get('student-1')).toMatchObject({ nis: '1001' });
+    expect(await current.classEnrollments.where('[classId+studentId]').equals(['class-1', 'student-1']).first()).toBeDefined();
+    expect((await current.classes.get('class-1'))?.academicPeriodId).toBeTruthy();
     expect(await current.attendances.get('attendance-1')).toMatchObject({ status: 'hadir' });
     expect(await current.grades.get('grade-1')).toMatchObject({ score: 90 });
     expect(await current.notes.get('note-1')).toMatchObject({ title: 'Note' });
     expect(await current.tasks.get('task-1')).toMatchObject({ title: 'Task' });
 
-    expect(current.students.schema.indexes.map(({ name }) => name)).toEqual(
-      expect.arrayContaining(['nis', '[classId+name]']),
-    );
+    expect(current.students.schema.indexes.map(({ name }) => name)).toContain('nis');
     expect(current.attendances.schema.indexes.map(({ name }) => name)).toEqual(
       expect.arrayContaining(['date', '[classId+subjectId+date]']),
     );

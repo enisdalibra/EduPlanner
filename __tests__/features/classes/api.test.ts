@@ -15,12 +15,16 @@ vi.mock('@/db/database', () => {
     update: vi.fn(),
     sortBy: vi.fn(),
     bulkAdd: vi.fn(),
+    filter: vi.fn().mockReturnThis(),
+    first: vi.fn(),
   };
 
   return {
     db: {
       classes: { ...mockTable },
       students: { ...mockTable },
+      academicPeriods: { ...mockTable },
+      classEnrollments: { ...mockTable },
       attendances: { ...mockTable },
       grades: { ...mockTable },
       notes: { ...mockTable },
@@ -38,6 +42,7 @@ vi.mock('@/db/database', () => {
 describe('Classes API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(db.academicPeriods.get).mockResolvedValue({ id: 'period-1', name: '2026/2027', startDate: '2026-07-01', endDate: '2027-06-30', isActive: true });
   });
 
   it('should fetch all classes', async () => {
@@ -59,13 +64,14 @@ describe('Classes API', () => {
   });
 
   it('should create a class', async () => {
-    const result = await createClass('Class 1', 'Desc');
+    const result = await createClass('Class 1', 'Desc', 'period-1');
     expect(result).toHaveProperty('name', 'Class 1');
     expect(db.classes.add).toHaveBeenCalled();
   });
 
   it('should update a class', async () => {
     vi.mocked(db.classes.update).mockResolvedValue(1);
+    vi.mocked(db.classes.get).mockResolvedValue({ id: '1', name: 'Class 1', description: 'Desc', academicPeriodId: 'period-1' });
     const result = await updateClass('1', 'Class 1 Updated', 'Desc Updated');
     expect(result).toBe(1);
     expect(db.classes.update).toHaveBeenCalledWith('1', { name: 'Class 1 Updated', description: 'Desc Updated' });

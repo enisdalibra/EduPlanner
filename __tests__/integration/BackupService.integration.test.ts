@@ -16,13 +16,13 @@ async function seedEveryTable(): Promise<void> {
       name: 'Matematika',
       assignedStudents: ['student-1'],
     });
-    await db.classes.add({ id: 'class-1', name: 'Kelas 1' });
+    await db.classes.add({ id: 'class-1', name: 'Kelas 1', academicPeriodId: 'period-test' });
     await db.students.add({
       id: 'student-1',
-      classId: 'class-1',
       name: 'Budi',
       nis: '00101',
     });
+    await db.classEnrollments.add({ id: 'enrollment-1', classId: 'class-1', studentId: 'student-1', enrolledAt: '2026-07-01' });
     await db.attendances.add({
       id: 'attendance-1',
       classId: 'class-1',
@@ -167,7 +167,7 @@ describe('BackupService IndexedDB integration', () => {
     }];
 
     await expect(BackupService.restoreExportPayload(invalid)).rejects.toThrow(
-      /students.classId references missing classes/,
+      /classEnrollments|academicPeriodId/,
     );
 
     const afterFailure = await BackupService.generateExport();

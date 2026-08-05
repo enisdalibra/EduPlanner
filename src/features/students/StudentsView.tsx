@@ -11,12 +11,14 @@ import {
   importStudentsBulk,
   updateStudent,
   type DuplicateNisPolicy,
+  type StudentBulkInput,
 } from "./api";
+import { enrollStudent } from "@/features/classes/api";
 
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { StudentTable } from "./components/StudentTable";
 import { Icon } from "@/components/ui/icon";
@@ -29,21 +31,23 @@ export function StudentsView() {
   const { t } = useTranslation();
   
   const classes = useLiveQuery(() => db.classes.toArray());
-  const students = useLiveQuery(() => {
-    let query = db.students.toCollection();
-    
+  const enrollments = useLiveQuery(() => db.classEnrollments.toArray());
+  const students = useLiveQuery(async () => {
+    let arr = await db.students.toArray();
     if (selectedClassId !== "all") {
-      query = db.students.where("classId").equals(selectedClassId);
+      const studentIds = new Set(
+        (await db.classEnrollments.where('classId').equals(selectedClassId).toArray())
+          .filter((item) => !item.endedAt)
+          .map(({ studentId }) => studentId),
+      );
+      arr = arr.filter((student) => studentIds.has(student.id));
     }
-    
-    return query.toArray().then(arr => {
       if (!searchQuery) return arr;
       const lowerQ = searchQuery.toLowerCase();
       return arr.filter(s => 
         (s.name && s.name.toLowerCase().includes(lowerQ)) || 
         (s.nis && s.nis.toLowerCase().includes(lowerQ))
       );
-    });
   }, [selectedClassId, searchQuery]);
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -58,6 +62,7 @@ export function StudentsView() {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [importClassId, setImportClassId] = useState<string>("");
   const [duplicateNisPolicy, setDuplicateNisPolicy] = useState<DuplicateNisPolicy>("reject");
+  const [importPreview, setImportPreview] = useState<StudentBulkInput[] | null>(null);
 
   const confirmDelete = async () => {
     if (studentToDelete) {
@@ -76,9 +81,9 @@ export function StudentsView() {
     
     await updateStudent(studentToEdit.id, {
       name: studentToEdit.name,
-      nis: studentToEdit.nis || "-",
-      classId: studentToEdit.classId
+      nis: studentToEdit.nis || "-"
     });
+    await enrollStudent(studentToEdit.classId, studentToEdit.id);
     
     setIsEditDialogOpen(false);
     setStudentToEdit(null);
@@ -110,19 +115,31 @@ export function StudentsView() {
 
     try {
       const roster = await StudentService.parseExcelImport(file);
-      const result = await importStudentsBulk(importClassId, roster, duplicateNisPolicy);
+      setImportPreview(roster);
+    } catch (err) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : t('studentsPage.errorProcessExcel'));
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const confirmImport = async () => {
+    if (!importClassId || !importPreview) return;
+    try {
+      const result = await importStudentsBulk(importClassId, importPreview, duplicateNisPolicy);
       toast.success(t('studentsPage.successImport', { count: result.students.length }));
+      if (result.linked > 0) toast.info(`${result.linked} ${t('studentsPage.importLinked')}`);
       if (result.skipped > 0) {
         toast.warning(t('studentsPage.skippedDuplicates', { count: result.skipped }));
       }
       setIsImportDialogOpen(false);
       setImportClassId("");
       setDuplicateNisPolicy("reject");
+      setImportPreview(null);
     } catch (err) {
       console.error(err);
       toast.error(err instanceof Error ? err.message : t('studentsPage.errorProcessExcel'));
-    } finally {
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -205,7 +222,13 @@ export function StudentsView() {
                   />
                   {!importClassId && <p className="text-xs text-danger">{t('studentsPage.selectClassTarget')}</p>}
                 </div>
+                {importPreview && <div className="rounded-xl border bg-gray-50 dark:bg-gray-800 p-3 text-sm space-y-1">
+                  <div className="font-semibold">{t('studentsPage.importPreviewTitle')}</div>
+                  <div>{importPreview.length} {t('studentsPage.importPreviewRows')}</div>
+                  <div>{importPreview.filter((row) => students?.some((student) => student.nis === row.nis)).length} {t('studentsPage.importPreviewLinked')}</div>
+                </div>}
               </div>
+              {importPreview && <DialogFooter><Button variant="outline" onClick={() => setImportPreview(null)}>{t('common.cancel')}</Button><Button onClick={confirmImport}>{t('studentsPage.importConfirm')}</Button></DialogFooter>}
             </DialogContent>
           </Dialog>
 
@@ -357,9 +380,11 @@ export function StudentsView() {
       <StudentTable 
         students={students} 
         classes={classes} 
+        enrollments={enrollments}
         t={t} 
         onEdit={(student) => {
-          setStudentToEdit({ id: student.id, name: student.name, nis: student.nis, classId: student.classId });
+          const classId = enrollments?.find((item) => item.studentId === student.id && !item.endedAt)?.classId ?? "";
+          setStudentToEdit({ id: student.id, name: student.name, nis: student.nis, classId });
           setIsEditDialogOpen(true);
         }}
         onDelete={(student) => {

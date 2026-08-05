@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 
-export const CURRENT_DATABASE_VERSION = 7;
+export const CURRENT_DATABASE_VERSION = 8;
 export const DEFAULT_DATABASE_NAME = 'EduPlannerDB';
 
 export interface Profile {
@@ -23,13 +23,30 @@ export interface Class {
   id: string; 
   name: string; 
   description?: string; 
+  academicPeriodId: string;
+  archivedAt?: string;
 }
 
 export interface Student { 
   id: string; 
-  classId: string; 
   name: string; 
   nis: string; 
+}
+
+export interface AcademicPeriod {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+}
+
+export interface ClassEnrollment {
+  id: string;
+  studentId: string;
+  classId: string;
+  enrolledAt: string;
+  endedAt?: string;
 }
 
 export interface Attendance { 
@@ -113,6 +130,8 @@ export class EduPlannerDB extends Dexie {
   subjects!: Table<Subject, string>;
   classes!: Table<Class, string>;
   students!: Table<Student, string>;
+  academicPeriods!: Table<AcademicPeriod, string>;
+  classEnrollments!: Table<ClassEnrollment, string>;
   attendances!: Table<Attendance, string>;
   grades!: Table<Grade, string>;
   notes!: Table<Note, string>;
@@ -168,8 +187,54 @@ export class EduPlannerDB extends Dexie {
       attendances: 'id, [classId+date], [classId+subjectId+date], studentId, subjectId, classId, date'
     });
 
-    this.version(CURRENT_DATABASE_VERSION).stores({
+    this.version(7).stores({
       schedules: 'id, classId, recurrenceType, startDate'
+    });
+
+    this.version(CURRENT_DATABASE_VERSION).stores({
+      academicPeriods: 'id, name, isActive, startDate, endDate',
+      classes: 'id, academicPeriodId, archivedAt, name',
+      students: 'id, name, nis',
+      classEnrollments: 'id, &[classId+studentId], classId, studentId, endedAt',
+    }).upgrade(async (transaction) => {
+      const now = new Date();
+      const academicYearStart = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
+      const periodId = crypto.randomUUID();
+      const formatDate = (date: Date) => date.toISOString().slice(0, 10);
+
+      await transaction.table('academicPeriods').add({
+        id: periodId,
+        name: 'Periode Saat Ini',
+        startDate: formatDate(new Date(academicYearStart, 6, 1)),
+        endDate: formatDate(new Date(academicYearStart + 1, 5, 30)),
+        isActive: true,
+      });
+
+      await transaction.table('classes').toCollection().modify((cls: Record<string, unknown>) => {
+        cls.academicPeriodId = periodId;
+      });
+
+      const legacyStudents = await transaction.table('students').toArray() as Array<{
+        id: string;
+        classId?: string;
+      }>;
+      const classIds = new Set(
+        (await transaction.table('classes').toArray() as Array<{ id: string }>).map(({ id }) => id),
+      );
+      const enrollments = legacyStudents
+        .filter((student) => student.classId && classIds.has(student.classId))
+        .map((student) => ({
+          id: crypto.randomUUID(),
+          studentId: student.id,
+          classId: student.classId,
+          enrolledAt: formatDate(new Date(academicYearStart, 6, 1)),
+        }));
+      if (enrollments.length > 0) {
+        await transaction.table('classEnrollments').bulkAdd(enrollments);
+      }
+      await transaction.table('students').toCollection().modify((student: Record<string, unknown>) => {
+        delete student.classId;
+      });
     });
   }
 }

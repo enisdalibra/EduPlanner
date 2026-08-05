@@ -10,13 +10,13 @@ import { deleteTestDatabase, resetTestDatabase } from './testDatabase';
 describe('attendance undo IndexedDB integration', () => {
   beforeEach(async () => {
     await resetTestDatabase();
-    await db.classes.add({ id: 'class-1', name: 'Class 1' });
+    await db.classes.add({ id: 'class-1', name: 'Class 1', academicPeriodId: 'period-test' });
     await db.students.add({
       id: 'student-1',
-      classId: 'class-1',
       name: 'Budi',
       nis: '101',
     });
+    await db.classEnrollments.add({ id: 'enrollment-1', classId: 'class-1', studentId: 'student-1', enrolledAt: '2026-07-01' });
     useActionHistoryStore.getState().clearHistory();
   });
 

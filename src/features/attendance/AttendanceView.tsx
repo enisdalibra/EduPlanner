@@ -33,9 +33,9 @@ export function AttendanceView() {
   const currentLocale = language === 'id' ? localeId : localeEn;
   const [activeTab, setActiveTab] = useState<'presensi' | 'rekap'>('presensi');
   
-  const classes = useLiveQuery(() => db.classes.toArray());
+  const classes = useLiveQuery(() => db.classes.filter((cls) => !cls.archivedAt).toArray());
   const subjects = useLiveQuery(() => db.subjects.toArray());
-  const allStudents = useLiveQuery(() => db.students.toArray());
+  const enrollments = useLiveQuery(() => db.classEnrollments.toArray());
   const formattedDate = format(date, 'yyyy-MM-dd');
 
   // Query all attendance records for the selected class to build the recap table
@@ -63,16 +63,16 @@ export function AttendanceView() {
   
   // Filter subjects that have at least one student from the selected class assigned to them
   const availableSubjects = useMemo(() => {
-    if (!selectedClassId || !subjects || !allStudents) return [];
+    if (!selectedClassId || !subjects || !enrollments) return [];
     
     // IDs of students in the currently selected class
-    const classStudentIds = new Set(allStudents.filter(s => s.classId === selectedClassId).map(s => s.id));
+    const classStudentIds = new Set(enrollments.filter((item) => item.classId === selectedClassId && !item.endedAt).map(({ studentId }) => studentId));
     
     return subjects.filter(subject => {
       // Check if any student assigned to this subject is in the selected class
       return (subject.assignedStudents || []).some(id => classStudentIds.has(id));
     });
-  }, [subjects, selectedClassId, allStudents]);
+  }, [subjects, selectedClassId, enrollments]);
 
   const onSubjectUnavailable = useCallback(() => setSelectedSubjectId('none'), []);
   const {

@@ -10,13 +10,18 @@ import { deleteTestDatabase, resetTestDatabase } from './testDatabase';
 async function seedRelatedRecords(): Promise<void> {
   await db.transaction('rw', db.tables, async () => {
     await db.classes.bulkAdd([
-      { id: 'class-delete', name: 'Delete' },
-      { id: 'class-keep', name: 'Keep' },
+      { id: 'class-delete', name: 'Delete', academicPeriodId: 'period-test' },
+      { id: 'class-keep', name: 'Keep', academicPeriodId: 'period-test' },
     ]);
     await db.students.bulkAdd([
-      { id: 'student-delete-1', classId: 'class-delete', name: 'A', nis: '101' },
-      { id: 'student-delete-2', classId: 'class-delete', name: 'B', nis: '102' },
-      { id: 'student-keep', classId: 'class-keep', name: 'C', nis: '103' },
+      { id: 'student-delete-1', name: 'A', nis: '101' },
+      { id: 'student-delete-2', name: 'B', nis: '102' },
+      { id: 'student-keep', name: 'C', nis: '103' },
+    ]);
+    await db.classEnrollments.bulkAdd([
+      { id: 'ed1', classId: 'class-delete', studentId: 'student-delete-1', enrolledAt: '2026-07-01' },
+      { id: 'ed2', classId: 'class-delete', studentId: 'student-delete-2', enrolledAt: '2026-07-01' },
+      { id: 'ek', classId: 'class-keep', studentId: 'student-keep', enrolledAt: '2026-07-01' },
     ]);
     await db.subjects.add({
       id: 'subject-1',
@@ -68,6 +73,7 @@ describe('cascade deletion IndexedDB integration', () => {
     expect(await db.attendances.where('studentId').equals('student-delete-1').count()).toBe(0);
     expect(await db.grades.where('studentId').equals('student-delete-1').count()).toBe(0);
     expect(await db.studentNotes.where('studentId').equals('student-delete-1').count()).toBe(0);
+    expect(await db.classEnrollments.where('studentId').equals('student-delete-1').count()).toBe(0);
     expect((await db.subjects.get('subject-1'))?.assignedStudents).toEqual([
       'student-delete-2',
       'student-keep',
@@ -81,7 +87,7 @@ describe('cascade deletion IndexedDB integration', () => {
     await deleteClass('class-delete');
 
     expect(await db.classes.get('class-delete')).toBeUndefined();
-    expect(await db.students.where('classId').equals('class-delete').count()).toBe(0);
+    expect(await db.classEnrollments.where('classId').equals('class-delete').count()).toBe(0);
     expect(await db.attendances.where('classId').equals('class-delete').count()).toBe(0);
     expect(await db.grades.where('classId').equals('class-delete').count()).toBe(0);
     expect(await db.notes.where('classId').equals('class-delete').count()).toBe(0);
@@ -91,11 +97,12 @@ describe('cascade deletion IndexedDB integration', () => {
     expect(await db.studentNotes.where('studentId').anyOf([
       'student-delete-1',
       'student-delete-2',
-    ]).count()).toBe(0);
-    expect((await db.subjects.get('subject-1'))?.assignedStudents).toEqual(['student-keep']);
+    ]).count()).toBe(1);
+    expect((await db.subjects.get('subject-1'))?.assignedStudents).toEqual(['student-delete-1', 'student-delete-2', 'student-keep']);
 
     expect(await db.classes.get('class-keep')).toBeDefined();
     expect(await db.students.get('student-keep')).toBeDefined();
+    expect(await db.students.get('student-delete-1')).toBeDefined();
     expect(await db.attendances.get('attendance-keep')).toBeDefined();
     expect(await db.grades.get('grade-keep')).toBeDefined();
     expect(await db.notes.get('note-keep')).toBeDefined();

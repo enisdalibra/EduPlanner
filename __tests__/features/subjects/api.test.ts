@@ -13,6 +13,7 @@ vi.mock('@/db/database', () => {
     update: vi.fn(),
     get: vi.fn(),
     toArray: vi.fn(),
+    bulkGet: vi.fn(),
   };
 
   return {
@@ -26,6 +27,7 @@ vi.mock('@/db/database', () => {
       schedules: { ...mockTable },
       classes: { ...mockTable },
       students: { ...mockTable },
+      classEnrollments: { ...mockTable },
       transaction: vi.fn(async (...args) => {
         const cb = args[args.length - 1];
         return cb();
@@ -63,16 +65,19 @@ describe('Subjects API', () => {
   });
 
   it('assigns every class student without duplicating existing enrollment', async () => {
-    vi.mocked(db.subjects.get)
-      .mockResolvedValueOnce({
+    vi.mocked(db.subjects.get).mockResolvedValueOnce({
         id: 'subject-1',
         name: 'Math',
         assignedStudents: ['s1'],
-      })
-      .mockResolvedValueOnce({ id: 'c1', name: 'Class 1' });
-    vi.mocked(db.students.toArray).mockResolvedValue([
-      { id: 's1', classId: 'c1', name: 'Budi', nis: '101' },
-      { id: 's2', classId: 'c1', name: 'Siti', nis: '102' },
+      });
+    vi.mocked(db.classes.get).mockResolvedValueOnce({ id: 'c1', name: 'Class 1', academicPeriodId: 'period-1' });
+    vi.mocked(db.classEnrollments.toArray).mockResolvedValue([
+      { id: 'e1', classId: 'c1', studentId: 's1', enrolledAt: '2026-07-01' },
+      { id: 'e2', classId: 'c1', studentId: 's2', enrolledAt: '2026-07-01' },
+    ]);
+    vi.mocked(db.students.bulkGet).mockResolvedValue([
+      { id: 's1', name: 'Budi', nis: '101' },
+      { id: 's2', name: 'Siti', nis: '102' },
     ]);
 
     await expect(assignClassToSubject('subject-1', 'c1')).resolves.toEqual(['s1', 's2']);

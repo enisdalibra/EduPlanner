@@ -463,6 +463,11 @@ export const dict = {
       thNis: "NIS",
       noStudentsFound: "Tidak ada siswa yang ditemukan.",
       deletedClass: "Kelas Terhapus"
+      ,importLinked: "siswa lama ditautkan ke kelas ini",
+      importPreviewTitle: "Pratinjau impor",
+      importPreviewRows: "baris siap diproses",
+      importPreviewLinked: "siswa dengan NIS yang sudah ada akan ditautkan",
+      importConfirm: "Konfirmasi Impor"
     },
     studentDetail: {
       notFound: "Data siswa tidak ditemukan.",
@@ -637,6 +642,8 @@ export const dict = {
       previewTableTeachingSessions: "Sesi mengajar",
       previewTableStudentNotes: "Catatan siswa",
       previewTableSchedules: "Jadwal",
+      previewTableAcademicPeriods: "Periode Akademik",
+      previewTableClassEnrollments: "Keanggotaan Kelas",
       successImport: "Data berhasil diimpor!",
       errorImport: "Format file tidak valid atau terjadi kesalahan"
     },
@@ -1191,6 +1198,11 @@ export const dict = {
       thNis: "ID",
       noStudentsFound: "No students found.",
       deletedClass: "Deleted Class"
+      ,importLinked: "existing students linked to this class",
+      importPreviewTitle: "Import preview",
+      importPreviewRows: "rows ready to process",
+      importPreviewLinked: "students with an existing NIS will be linked",
+      importConfirm: "Confirm Import"
     },
     studentDetail: {
       notFound: "Student data not found.",
@@ -1365,6 +1377,8 @@ export const dict = {
       previewTableTeachingSessions: "Teaching sessions",
       previewTableStudentNotes: "Student notes",
       previewTableSchedules: "Schedules",
+      previewTableAcademicPeriods: "Academic Periods",
+      previewTableClassEnrollments: "Class Enrollments",
       successImport: "Data imported successfully!",
       errorImport: "Invalid file format or an error occurred"
     },

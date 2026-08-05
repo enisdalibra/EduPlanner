@@ -1,6 +1,7 @@
 import { db, type TeachingSession } from '@/db/database';
 import { DomainNotFoundError } from '@/lib/domainErrors';
 import { validateTeachingSession } from '@/lib/validation';
+import { assertClassWritable } from '@/lib/classAccess';
 
 export type TeachingSessionInput = Omit<TeachingSession, 'id'>;
 
@@ -12,9 +13,7 @@ export async function recordTeachingSession(input: TeachingSessionInput): Promis
     'rw',
     [db.teachingSessions, db.classes, db.subjects, db.notes],
     async () => {
-      if (!(await db.classes.get(session.classId))) {
-        throw new DomainNotFoundError('Class', session.classId);
-      }
+      await assertClassWritable(db, session.classId);
       if (session.subjectId && !(await db.subjects.get(session.subjectId))) {
         throw new DomainNotFoundError('Subject', session.subjectId);
       }

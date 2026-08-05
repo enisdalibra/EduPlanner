@@ -11,6 +11,8 @@ import {
   type Subject,
   type Task,
   type TeachingSession,
+  type AcademicPeriod,
+  type ClassEnrollment,
 } from "@/db/database";
 import {
   validateAttendance,
@@ -24,6 +26,8 @@ import {
   validateSubject,
   validateTask,
   validateTeachingSession,
+  validateAcademicPeriod,
+  validateClassEnrollment,
   ValidationError,
 } from "@/lib/validation";
 import {
@@ -115,8 +119,8 @@ function assertRecordSchema(tableName: BackupTableName, record: BackupRecord, in
   const requiredStrings: Partial<Record<BackupTableName, string[]>> = {
     profile: ["name", "school"],
     subjects: ["name"],
-    classes: ["name"],
-    students: ["classId", "name", "nis"],
+    classes: ["name", "academicPeriodId"],
+    students: ["name", "nis"],
     attendances: ["classId", "studentId", "date", "status"],
     grades: ["classId", "studentId", "evaluationName"],
     notes: ["title", "content", "type"],
@@ -124,13 +128,15 @@ function assertRecordSchema(tableName: BackupTableName, record: BackupRecord, in
     teachingSessions: ["classId", "date"],
     studentNotes: ["studentId", "content"],
     schedules: ["classId", "startTime", "endTime", "recurrenceType", "startDate"],
+    academicPeriods: ["name", "startDate", "endDate"],
+    classEnrollments: ["studentId", "classId", "enrolledAt"],
   };
   requiredStrings[tableName]?.forEach((key) => assertString(record, key, tableName, index));
 
   const nonEmptyStrings: Partial<Record<BackupTableName, string[]>> = {
     subjects: ["name"],
-    classes: ["name"],
-    students: ["classId", "name", "nis"],
+    classes: ["name", "academicPeriodId"],
+    students: ["name", "nis"],
     attendances: ["classId", "studentId", "date", "status"],
     grades: ["classId", "studentId", "evaluationName"],
     notes: ["title", "type"],
@@ -138,6 +144,8 @@ function assertRecordSchema(tableName: BackupTableName, record: BackupRecord, in
     teachingSessions: ["classId", "date"],
     studentNotes: ["studentId"],
     schedules: ["classId", "startTime", "endTime", "recurrenceType", "startDate"],
+    academicPeriods: ["name", "startDate", "endDate"],
+    classEnrollments: ["studentId", "classId", "enrolledAt"],
   };
   nonEmptyStrings[tableName]?.forEach((key) =>
     assertNonEmptyString(record, key, tableName, index),
@@ -158,6 +166,11 @@ function assertRecordSchema(tableName: BackupTableName, record: BackupRecord, in
         `Backup table "subjects" record ${index + 1} has an invalid "assignedStudents" field.`,
       );
     }
+  }
+  if (tableName === "academicPeriods" && typeof record.isActive !== "boolean") {
+    throw new BackupValidationError(
+      `Backup table "academicPeriods" record ${index + 1} has an invalid "isActive" field.`,
+    );
   }
 
   [
@@ -295,6 +308,12 @@ function validateBackupRecordDomain(
         break;
       case "schedules":
         validateSchedule(record as unknown as Schedule);
+        break;
+      case "academicPeriods":
+        validateAcademicPeriod(record as unknown as AcademicPeriod);
+        break;
+      case "classEnrollments":
+        validateClassEnrollment(record as unknown as ClassEnrollment);
         break;
     }
   } catch (error) {

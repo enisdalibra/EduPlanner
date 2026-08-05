@@ -19,6 +19,9 @@ vi.mock('@/db/database', () => ({
     subjects: {
       get: vi.fn().mockResolvedValue({ id: 'subject-1', name: 'Math' }),
     },
+    classEnrollments: {
+      where: vi.fn().mockReturnThis(), equals: vi.fn().mockReturnThis(), first: vi.fn().mockResolvedValue({ id: 'e1', classId: 'c1', studentId: 's1' }),
+    },
     grades: {
       where: vi.fn().mockReturnThis(),
       equals: vi.fn().mockReturnThis(),

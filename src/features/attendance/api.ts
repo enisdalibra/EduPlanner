@@ -6,6 +6,7 @@ import {
 } from '@/lib/academicRelations';
 import { DomainNotFoundError } from '@/lib/domainErrors';
 import { validateAttendance, ValidationError } from '@/lib/validation';
+import { assertClassWritable } from '@/lib/classAccess';
 
 function attendanceScopeKey(record: Pick<Attendance, 'classId' | 'subjectId' | 'date'>): string {
   return JSON.stringify([record.classId, record.subjectId ?? null, record.date]);
@@ -106,7 +107,7 @@ async function assertAttendanceScopeParents(
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     throw new ValidationError('Attendance scope date must be in YYYY-MM-DD format.');
   }
-  if (!(await db.classes.get(classId))) throw new DomainNotFoundError('Class', classId);
+  await assertClassWritable(db, classId);
   if (subjectId && !(await db.subjects.get(subjectId))) {
     throw new DomainNotFoundError('Subject', subjectId);
   }
@@ -178,7 +179,7 @@ export async function saveAttendance(records: Attendance[]) {
 
   await db.transaction(
     'rw',
-    [db.attendances, db.classes, db.students, db.subjects],
+    [db.attendances, db.classes, db.students, db.subjects, db.classEnrollments],
     async () => {
       await validateAttendanceBatch(processedRecords);
       // bulkPut may update an existing record only after its immutable scope
@@ -196,7 +197,7 @@ export async function replaceAttendanceSnapshot(
 ): Promise<void> {
   await db.transaction(
     'rw',
-    [db.attendances, db.classes, db.students, db.subjects],
+    [db.attendances, db.classes, db.students, db.subjects, db.classEnrollments],
     async () => {
       await assertAttendanceScopeParents(classId, date, subjectId);
       await validateAttendanceBatch(records);

@@ -22,7 +22,7 @@ export function GradebookView() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("none");
   const { t } = useTranslation();
   
-  const classes = useLiveQuery(() => db.classes.toArray());
+  const classes = useLiveQuery(() => db.classes.filter((cls) => !cls.archivedAt).toArray());
   const subjects = useLiveQuery(() => db.subjects.toArray());
   
   const [students, setStudents] = useState<{id: string, name: string}[]>([]);

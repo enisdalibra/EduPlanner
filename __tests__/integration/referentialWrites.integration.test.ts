@@ -13,13 +13,18 @@ describe('referentially safe academic writes', () => {
   beforeEach(async () => {
     await resetTestDatabase();
     await db.classes.bulkAdd([
-      { id: 'class-a', name: 'Class A' },
-      { id: 'class-b', name: 'Class B' },
+      { id: 'class-a', name: 'Class A', academicPeriodId: 'period-test' },
+      { id: 'class-b', name: 'Class B', academicPeriodId: 'period-test' },
     ]);
     await db.students.bulkAdd([
-      { id: 'student-a', classId: 'class-a', name: 'Student A', nis: 'A-1' },
-      { id: 'student-c', classId: 'class-a', name: 'Student C', nis: 'C-1' },
-      { id: 'student-b', classId: 'class-b', name: 'Student B', nis: 'B-1' },
+      { id: 'student-a', name: 'Student A', nis: 'A-1' },
+      { id: 'student-c', name: 'Student C', nis: 'C-1' },
+      { id: 'student-b', name: 'Student B', nis: 'B-1' },
+    ]);
+    await db.classEnrollments.bulkAdd([
+      { id: 'ea', classId: 'class-a', studentId: 'student-a', enrolledAt: '2026-07-01' },
+      { id: 'ec', classId: 'class-a', studentId: 'student-c', enrolledAt: '2026-07-01' },
+      { id: 'eb', classId: 'class-b', studentId: 'student-b', enrolledAt: '2026-07-01' },
     ]);
     await db.subjects.add({ id: 'subject-a', name: 'Biology' });
   });
@@ -40,7 +45,7 @@ describe('referentially safe academic writes', () => {
 
     await expect(
       saveGrade('class-a', 'student-b', 'Quiz', 80, 'subject-a'),
-    ).rejects.toThrow(/belongs to class/);
+    ).rejects.toThrow(/never been enrolled/);
     await expect(
       saveGrade('missing-class', 'student-a', 'Quiz', 80),
     ).rejects.toThrow(/Class/);
@@ -109,7 +114,7 @@ describe('referentially safe academic writes', () => {
       },
     ];
 
-    await expect(saveAttendance(records)).rejects.toThrow(/belongs to class/);
+    await expect(saveAttendance(records)).rejects.toThrow(/never been enrolled/);
     await expect(
       saveAttendance([
         {
