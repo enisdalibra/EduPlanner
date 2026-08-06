@@ -4,7 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
 import { addStudentsBulk, createStudent } from "@/features/students/api";
 import { endEnrollment, getStudentsByClass } from "./api";
-import { recordTeachingSession } from "@/features/teaching/api";
+import { completeTeachingTimer } from "@/features/teaching/timer";
 import { updateNote } from "@/features/notes/api";
 import { ScheduleEditorDialog } from "./components/ScheduleEditorDialog";
 import { useScheduleEditor } from "./hooks/useScheduleEditor";
@@ -59,22 +59,23 @@ export function ClassDetailView() {
 
   const handleStopMaterial = async () => {
     if (!activeTimer) return;
-    const now = Date.now();
-    const durationMinutes = Math.round((now - activeTimer.startTime) / 60000);
     try {
-      await recordTeachingSession({
-        classId: activeTimer.classId,
-        subjectId: activeTimer.subjectId === 'none' ? undefined : activeTimer.subjectId,
-        noteId: activeTimer.noteId,
-        date: format(now, 'yyyy-MM-dd'),
-        startTime: activeTimer.startTime,
-        endTime: now,
-        durationMinutes: durationMinutes
-      });
+      const durationMinutes = await completeTeachingTimer(activeTimer);
       clearTimer();
       toast.success(t('timeTracker.successSave', { minutes: durationMinutes }));
     } catch (e) {
-      toast.error(t('timeTracker.errorSave'));
+      console.error('Failed to record teaching time', e);
+      toast.error(t('timeTracker.errorSave'), {
+        description: t('timeTracker.errorSaveHint'),
+        duration: 10_000,
+        action: {
+          label: t('timeTracker.cancelTimer'),
+          onClick: () => {
+            stopTimer();
+            toast.info(t('timeTracker.timerCancelled'));
+          },
+        },
+      });
     }
   };
 

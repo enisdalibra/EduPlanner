@@ -7,15 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SimpleTooltip } from '@/components/ui/simple-tooltip';
-import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Icon } from "@/components/ui/icon";
-import { recordTeachingSession } from '@/features/teaching/api';
+import { completeTeachingTimer, isClassAvailableForTimer } from '@/features/teaching/timer';
 
 export function TimeTrackerWidget() {
   const { activeTimer, startTimer, stopTimer, clearTimer } = useTimerStore();
-  const classes = useLiveQuery(() => db.classes.toArray()) || [];
+  const classes = useLiveQuery(() => db.classes.filter(isClassAvailableForTimer).toArray()) || [];
   const subjects = useLiveQuery(() => db.subjects.toArray()) || [];
   const { t } = useTranslation();
 
@@ -51,23 +50,23 @@ export function TimeTrackerWidget() {
   const handleStop = async () => {
     if (!activeTimer) return;
     
-    const now = Date.now();
-    const durationMinutes = Math.round((now - activeTimer.startTime) / 60000);
-    
     try {
-      await recordTeachingSession({
-        classId: activeTimer.classId,
-        subjectId: activeTimer.subjectId === 'none' ? undefined : activeTimer.subjectId,
-        noteId: activeTimer.noteId,
-        date: format(now, 'yyyy-MM-dd'),
-        startTime: activeTimer.startTime,
-        endTime: now,
-        durationMinutes: durationMinutes
-      });
+      const durationMinutes = await completeTeachingTimer(activeTimer);
       clearTimer();
       toast.success(t('timeTracker.successSave', { minutes: durationMinutes }));
     } catch (e) {
-      toast.error(t('timeTracker.errorSave'));
+      console.error('Failed to record teaching time', e);
+      toast.error(t('timeTracker.errorSave'), {
+        description: t('timeTracker.errorSaveHint'),
+        duration: 10_000,
+        action: {
+          label: t('timeTracker.cancelTimer'),
+          onClick: () => {
+            stopTimer();
+            toast.info(t('timeTracker.timerCancelled'));
+          },
+        },
+      });
     }
   };
 

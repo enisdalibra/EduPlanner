@@ -85,6 +85,40 @@ describe('bounded feature mutation APIs', () => {
     expect(mocks.sessionAdd).toHaveBeenCalledWith(session);
   });
 
+  it('finishes a teaching session that started before its class was archived', async () => {
+    mocks.classGet.mockResolvedValue({
+      id: 'c1',
+      name: 'Class 1',
+      archivedAt: new Date(150).toISOString(),
+    });
+
+    await expect(recordTeachingSession({
+      classId: 'c1',
+      date: '2026-07-20',
+      startTime: 100,
+      endTime: 200,
+      durationMinutes: 2,
+    })).resolves.toBeDefined();
+    expect(mocks.sessionAdd).toHaveBeenCalledOnce();
+  });
+
+  it('rejects a teaching session started after its class was archived', async () => {
+    mocks.classGet.mockResolvedValue({
+      id: 'c1',
+      name: 'Class 1',
+      archivedAt: new Date(50).toISOString(),
+    });
+
+    await expect(recordTeachingSession({
+      classId: 'c1',
+      date: '2026-07-20',
+      startTime: 100,
+      endTime: 200,
+      durationMinutes: 2,
+    })).rejects.toThrow(/archived/);
+    expect(mocks.sessionAdd).not.toHaveBeenCalled();
+  });
+
   it('normalizes profile fields in the profile API', async () => {
     const profile = await saveProfile({
       name: '  Guru  ',

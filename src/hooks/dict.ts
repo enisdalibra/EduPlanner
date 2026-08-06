@@ -662,7 +662,10 @@ export const dict = {
       errorNoClass: "Silakan pilih kelas terlebih dahulu!",
       successStart: "Waktu dimulai",
       successSave: "Waktu mengajar dicatat: {{minutes}} menit",
-      errorSave: "Gagal mencatat waktu mengajar"
+      errorSave: "Gagal mencatat waktu mengajar",
+      errorSaveHint: "Coba simpan kembali atau batalkan timer jika kelas, mata pelajaran, atau materi sudah tidak tersedia.",
+      cancelTimer: "Batalkan timer",
+      timerCancelled: "Timer dibatalkan tanpa menyimpan sesi"
     },
     common: {
       save: "Simpan",
@@ -1397,7 +1400,10 @@ export const dict = {
       errorNoClass: "Please select a class first!",
       successStart: "Started",
       successSave: "Teaching time recorded: {{minutes}} minutes",
-      errorSave: "Failed to record teaching time"
+      errorSave: "Failed to record teaching time",
+      errorSaveHint: "Try saving again, or cancel the timer if its class, subject, or material is no longer available.",
+      cancelTimer: "Cancel timer",
+      timerCancelled: "Timer cancelled without saving the session"
     },
     common: {
       save: "Save",

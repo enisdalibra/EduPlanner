@@ -8,3 +8,21 @@ export async function assertClassWritable(database: EduPlannerDB, classId: strin
   if (cls.archivedAt) throw new ValidationError(`Class "${classId}" is archived and read-only.`);
   return cls;
 }
+
+export async function assertClassWritableAt(
+  database: EduPlannerDB,
+  classId: string,
+  startedAt: number,
+) {
+  const cls = await database.classes.get(classId);
+  if (!cls) throw new DomainNotFoundError('Class', classId);
+
+  if (cls.archivedAt) {
+    const archivedAt = Date.parse(cls.archivedAt);
+    if (!Number.isFinite(archivedAt) || startedAt >= archivedAt) {
+      throw new ValidationError(`Class "${classId}" is archived and read-only.`);
+    }
+  }
+
+  return cls;
+}

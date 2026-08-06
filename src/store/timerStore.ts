@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface ActiveTimer {
+export interface ActiveTimer {
   classId: string;
   subjectId: string;
   startTime: number;
@@ -20,7 +20,7 @@ export const useTimerStore = create<TimerState>()(
     (set) => ({
       activeTimer: null,
       startTimer: (classId, subjectId, noteId) => set({ activeTimer: { classId, subjectId, startTime: Date.now(), noteId } }),
-      stopTimer: () => {}, // We'll handle saving to DB in the component, then call clearTimer
+      stopTimer: () => set({ activeTimer: null }),
       clearTimer: () => set({ activeTimer: null }),
     }),
     {
