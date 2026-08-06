@@ -1,10 +1,7 @@
 import { format } from 'date-fns';
 
-import type { Class } from '@/db/database';
 import type { ActiveTimer } from '@/store/timerStore';
 import { recordTeachingSession } from './api';
-
-export const isClassAvailableForTimer = (cls: Class) => !cls.archivedAt;
 
 export async function completeTeachingTimer(activeTimer: ActiveTimer, now = Date.now()) {
   const durationMinutes = Math.round((now - activeTimer.startTime) / 60000);

@@ -45,13 +45,26 @@ describe('Classes API', () => {
     vi.mocked(db.academicPeriods.get).mockResolvedValue({ id: 'period-1', name: '2026/2027', startDate: '2026-07-01', endDate: '2027-06-30', isActive: true });
   });
 
-  it('should fetch all classes', async () => {
-    const mockData = [{ id: '1', name: 'Class 1' }];
+  it('should exclude archived classes by default', async () => {
+    const mockData = [
+      { id: '1', name: 'Class 1' },
+      { id: '2', name: 'Archived Class', archivedAt: '2026-08-06T00:00:00.000Z' },
+    ];
     vi.mocked(db.classes.toArray).mockResolvedValue(mockData as any);
     
     const result = await getClasses();
-    expect(result).toEqual(mockData);
+    expect(result).toEqual([mockData[0]]);
     expect(db.classes.toArray).toHaveBeenCalled();
+  });
+
+  it('should include archived classes only when explicitly requested', async () => {
+    const mockData = [
+      { id: '1', name: 'Class 1' },
+      { id: '2', name: 'Archived Class', archivedAt: '2026-08-06T00:00:00.000Z' },
+    ];
+    vi.mocked(db.classes.toArray).mockResolvedValue(mockData as any);
+
+    await expect(getClasses({ includeArchived: true })).resolves.toEqual(mockData);
   });
 
   it('should fetch class by id', async () => {

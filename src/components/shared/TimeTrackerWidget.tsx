@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTimerStore } from '@/store/timerStore';
 import { db } from '@/db/database';
 import { useLiveQuery } from 'dexie-react-hooks';
-;
+import { getClasses } from '@/features/classes/api';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,11 +10,13 @@ import { SimpleTooltip } from '@/components/ui/simple-tooltip';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Icon } from "@/components/ui/icon";
-import { completeTeachingTimer, isClassAvailableForTimer } from '@/features/teaching/timer';
+import { completeTeachingTimer } from '@/features/teaching/timer';
 
 export function TimeTrackerWidget() {
   const { activeTimer, startTimer, stopTimer, clearTimer } = useTimerStore();
-  const classes = useLiveQuery(() => db.classes.filter(isClassAvailableForTimer).toArray()) || [];
+  // Use the class domain API so every class picker shares the same definition
+  // of an active class. getClasses() excludes archived records by default.
+  const classes = useLiveQuery(() => getClasses(), []) || [];
   const subjects = useLiveQuery(() => db.subjects.toArray()) || [];
   const { t } = useTranslation();
 
@@ -22,6 +24,12 @@ export function TimeTrackerWidget() {
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedSubject, setSelectedSubject] = useState<string>('none');
   const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (selectedClass && !classes.some((cls) => cls.id === selectedClass)) {
+      setSelectedClass('');
+    }
+  }, [classes, selectedClass]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -38,7 +46,7 @@ export function TimeTrackerWidget() {
   }, [activeTimer]);
 
   const handleStart = () => {
-    if (!selectedClass) {
+    if (!selectedClass || !classes.some((cls) => cls.id === selectedClass)) {
       toast.error(t('timeTracker.errorNoClass'));
       return;
     }
