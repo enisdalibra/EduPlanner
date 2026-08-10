@@ -10,8 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
@@ -155,28 +154,12 @@ export function AttendanceView() {
 
         <div className="space-y-2">
           <label className="block text-sm font-medium text-text dark:text-gray-300">{t('attendancePage.dateLabel')}</label>
-          <Popover>
-            <PopoverTrigger
-              render={<Button
-                variant="outline"
-                className={cn(
-                  "w-full h-10 justify-start text-left font-normal rounded-xl bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 px-4 text-text dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 transition-all",
-                  !date && "text-gray-400 dark:text-gray-500"
-                )}
-              />}
-            >
-              <Icon name="calendar_today" className="mr-2 h-4 w-4 text-gray-500" />
-              {date ? format(date, "PPP", { locale: currentLocale }) : <span>{t('attendancePage.datePlaceholder')}</span>}
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={(d) => d && setDate(d)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+          <DatePicker
+            value={format(date, 'yyyy-MM-dd')}
+            onChange={(value) => value && setDate(new Date(`${value}T00:00:00`))}
+            placeholder={t('attendancePage.datePlaceholder')}
+            clearable={false}
+          />
         </div>
       </div>
 

@@ -690,6 +690,17 @@ export const dict = {
       minute: "Menit",
       clear: "Hapus"
     },
+    timePicker: {
+      selectTime: "Pilih waktu",
+      enterTime: "Masukkan waktu",
+      switchToKeyboard: "Gunakan input angka",
+      switchToClock: "Gunakan jam analog"
+    },
+    datePicker: {
+      selectDate: "Pilih tanggal",
+      noDateSelected: "Belum ada tanggal",
+      today: "Hari ini"
+    },
     securityImages: {
       externalTitle: "Gambar eksternal diblokir",
       externalDescription: "Memuat gambar ini akan menghubungi situs pihak ketiga dan mengungkapkan alamat IP perangkat Anda.",
@@ -1430,6 +1441,17 @@ export const dict = {
       hour: "Hour",
       minute: "Minute",
       clear: "Clear"
+    },
+    timePicker: {
+      selectTime: "Select time",
+      enterTime: "Enter time",
+      switchToKeyboard: "Use numeric input",
+      switchToClock: "Use analog clock"
+    },
+    datePicker: {
+      selectDate: "Select date",
+      noDateSelected: "No date selected",
+      today: "Today"
     },
     securityImages: {
       externalTitle: "External image blocked",

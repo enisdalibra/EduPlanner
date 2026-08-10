@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
 import type React from "react";
 import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, type Task } from "@/db/database";
 import { createTask, updateTask } from "./api";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -13,14 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/hooks/useTranslation";
-import { enUS as localeEn } from "date-fns/locale";
 import { Icon } from "@/components/ui/icon";
 import { TimePicker } from "@/components/ui/time-picker";
+import { DatePicker } from "@/components/ui/date-picker";
 import { INPUT_LIMITS } from "@/lib/validation";
 
 interface TaskDialogProps {
@@ -33,7 +29,6 @@ interface TaskDialogProps {
 
 export function TaskDialog({ open, onOpenChange, defaultDate, onSuccess, taskToEdit }: TaskDialogProps) {
   const { t, language } = useTranslation();
-  const currentLocale = language === 'id' ? localeId : localeEn;
 
   const [title, setTitle] = useState("");
   const [date, setDate] = useState<Date | undefined>(defaultDate);
@@ -179,26 +174,12 @@ export function TaskDialog({ open, onOpenChange, defaultDate, onSuccess, taskToE
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>{t('calendarPage.labelDate')}</Label>
-              <Popover>
-                <PopoverTrigger render={<Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                  )}
-                />} >
-                  <Icon name="calendar_today" className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PP", { locale: currentLocale }) : <span>{t('calendarPage.selectBtn')}</span>}
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <DatePicker
+                value={date ? format(date, 'yyyy-MM-dd') : ''}
+                onChange={(value) => setDate(value ? new Date(`${value}T00:00:00`) : undefined)}
+                placeholder={t('calendarPage.selectBtn')}
+                clearable={false}
+              />
             </div>
             
             <div className="space-y-2">
@@ -270,31 +251,11 @@ export function TaskDialog({ open, onOpenChange, defaultDate, onSuccess, taskToE
           <div className="grid grid-cols-2 gap-4 border-t pt-4 mt-2 border-slate-100">
             <div className="space-y-2">
               <Label>{t('calendarPage.labelDeadlineDate')}</Label>
-              <Popover>
-                <PopoverTrigger render={<Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !deadlineDate && "text-muted-foreground"
-                  )}
-                />} >
-                  <Icon name="calendar_today" className="mr-2 h-4 w-4" />
-                  {deadlineDate ? format(deadlineDate, "PP", { locale: currentLocale }) : <span>{t('calendarPage.selectBtn')}</span>}
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={deadlineDate}
-                    onSelect={setDeadlineDate}
-                    initialFocus
-                  />
-                  {deadlineDate && (
-                     <div className="p-2 border-t text-center">
-                       <Button size="sm" variant="ghost" onClick={() => setDeadlineDate(undefined)}>{t('calendarPage.btnRemove')}</Button>
-                     </div>
-                  )}
-                </PopoverContent>
-              </Popover>
+              <DatePicker
+                value={deadlineDate ? format(deadlineDate, 'yyyy-MM-dd') : ''}
+                onChange={(value) => setDeadlineDate(value ? new Date(`${value}T00:00:00`) : undefined)}
+                placeholder={t('calendarPage.selectBtn')}
+              />
             </div>
             <div className="space-y-2">
               <Label>{t('calendarPage.labelDeadlineTime')}</Label>

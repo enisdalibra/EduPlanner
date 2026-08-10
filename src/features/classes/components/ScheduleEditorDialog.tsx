@@ -11,6 +11,7 @@ import {
 import { Icon } from '@/components/ui/icon';
 import { Label } from '@/components/ui/label';
 import { TimePicker } from '@/components/ui/time-picker';
+import { DatePicker } from '@/components/ui/date-picker';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { ScheduleEditor } from '../hooks/useScheduleEditor';
 
@@ -84,8 +85,8 @@ export function ScheduleEditorDialog({ editor, subjects }: ScheduleEditorDialogP
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="schedStartDate" className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('scheduling.startDateLabel')}</Label>
-            <input type="date" id="schedStartDate" className={selectClass} value={draft.startDate} onChange={(event) => editor.setField('startDate', event.target.value)} />
+            <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('scheduling.startDateLabel')}</Label>
+            <DatePicker value={draft.startDate} onChange={(value) => editor.setField('startDate', value)} clearable={false} />
           </div>
 
           <div className="space-y-1.5">
@@ -106,8 +107,8 @@ export function ScheduleEditorDialog({ editor, subjects }: ScheduleEditorDialogP
 
           {draft.endCriteria === 'date' && (
             <div className="space-y-1.5">
-              <Label htmlFor="schedEndDate" className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('scheduling.endDateLabel')}</Label>
-              <input type="date" id="schedEndDate" className={selectClass} value={draft.endDate} onChange={(event) => editor.setField('endDate', event.target.value)} />
+              <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('scheduling.endDateLabel')}</Label>
+              <DatePicker value={draft.endDate} onChange={(value) => editor.setField('endDate', value)} clearable={false} />
             </div>
           )}
 
