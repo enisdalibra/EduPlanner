@@ -36,7 +36,7 @@ export function ClassDetailView() {
   const students = useLiveQuery(() => getStudentsByClass(id!, Boolean(cls?.archivedAt)), [id, cls?.archivedAt]);
   const subjects = useLiveQuery(() => db.subjects.toArray());
   const teachingSessions = useLiveQuery(() => db.teachingSessions.where('classId').equals(id!).reverse().sortBy('startTime'), [id]);
-  const materials = useLiveQuery(() => db.notes.where('[classId+type]').equals([id!, 'materi']).reverse().sortBy('createdAt'), [id]);
+  const materials = useLiveQuery(() => db.notes.where('classIds').equals(id!).reverse().sortBy('createdAt'), [id]);
   const schedules = useLiveQuery(() => db.schedules.where('classId').equals(id!).toArray(), [id]);
 
   const { activeTimer, startTimer, stopTimer, clearTimer } = useTimerStore();
@@ -79,9 +79,12 @@ export function ClassDetailView() {
     }
   };
 
-  const handleToggleTaught = async (noteId: string, currentStatus?: boolean) => {
+  const handleToggleTaught = async (noteId: string, taughtClassIds: string[] = []) => {
     try {
-      await updateNote(noteId, { isTaught: !currentStatus });
+      const nextClassIds = taughtClassIds.includes(id!)
+        ? taughtClassIds.filter((classId) => classId !== id)
+        : [...taughtClassIds, id!];
+      await updateNote(noteId, { taughtClassIds: nextClassIds });
       toast.success(t('notesPage.successUpdate'));
     } catch (e) {
       toast.error(t('timeTracker.errorSave'));
@@ -144,9 +147,10 @@ export function ClassDetailView() {
     return acc;
   }, {} as Record<string, number>) || {};
 
+  const isMaterialTaught = (material: { taughtClassIds?: string[] }) => material.taughtClassIds?.includes(id!) ?? false;
   const sortedMaterials = materials ? [...materials].sort((a, b) => {
-    const aVal = a.isTaught ? 1 : 0;
-    const bVal = b.isTaught ? 1 : 0;
+    const aVal = isMaterialTaught(a) ? 1 : 0;
+    const bVal = isMaterialTaught(b) ? 1 : 0;
     return aVal - bVal;
   }) : [];
 
@@ -392,7 +396,7 @@ export function ClassDetailView() {
           {/* Progress Card */}
           {sortedMaterials && sortedMaterials.length > 0 && (() => {
             const total = sortedMaterials.length;
-            const taught = sortedMaterials.filter(m => m.isTaught).length;
+            const taught = sortedMaterials.filter(isMaterialTaught).length;
             const percent = Math.round((taught / total) * 100);
             return (
               <Card className="border border-gray-100 dark:border-gray-800 shadow-sm">
@@ -433,6 +437,7 @@ export function ClassDetailView() {
             ) : (
               <ul className="divide-y divide-gray-100 dark:divide-gray-700">
                 {sortedMaterials.map(material => {
+                  const materialIsTaught = isMaterialTaught(material);
                   const subjName = material.subjectId ? subjects?.find(s => s.id === material.subjectId)?.name : null;
                   const materialSessions = teachingSessions?.filter(s => s.noteId === material.id) || [];
                   const materialMins = materialSessions.reduce((sum, s) => sum + s.durationMinutes, 0);
@@ -443,22 +448,22 @@ export function ClassDetailView() {
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         {/* Checkbox */}
                         <button
-                          onClick={() => handleToggleTaught(material.id, material.isTaught)}
+                          onClick={() => handleToggleTaught(material.id, material.taughtClassIds)}
                           className={cn(
                             "flex-shrink-0 w-6 h-6 mt-0.5 rounded-lg border-2 flex items-center justify-center transition-all",
-                            material.isTaught 
+                            materialIsTaught
                               ? "bg-emerald-500 border-emerald-500 text-white" 
                               : "border-gray-300 dark:border-gray-600 hover:border-primary"
                           )}
                         >
-                          {material.isTaught && <Icon name="check" className="w-4 h-4 text-white" />}
+                          {materialIsTaught && <Icon name="check" className="w-4 h-4 text-white" />}
                         </button>
 
                         <div className="space-y-1 flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className={cn(
                               "font-bold text-text dark:text-white break-words",
-                              material.isTaught ? "text-gray-400 dark:text-gray-500 line-through decoration-gray-400/50" : ""
+                              materialIsTaught ? "text-gray-400 dark:text-gray-500 line-through decoration-gray-400/50" : ""
                             )}>
                               {material.title}
                             </span>
@@ -467,7 +472,7 @@ export function ClassDetailView() {
                                 {subjName}
                               </span>
                             )}
-                            {material.isTaught ? (
+                            {materialIsTaught ? (
                               <span className="text-[9px] font-extrabold tracking-wider uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 px-2 py-0.5 rounded-full">
                                 {t('classDetail.materialTaught')}
                               </span>
@@ -512,7 +517,7 @@ export function ClassDetailView() {
                             <Button
                               variant="outline"
                               size="sm"
-                              disabled={material.isTaught}
+                              disabled={materialIsTaught}
                               onClick={() => {
                                 if (activeTimer) {
                                   toast.error(t('classDetail.toastAnotherTimerActive'));
@@ -523,7 +528,7 @@ export function ClassDetailView() {
                               }}
                               className={cn(
                                 "gap-1 rounded-xl h-8 text-xs",
-                                material.isTaught ? "opacity-50 cursor-not-allowed" : "hover:border-emerald-500 hover:text-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20"
+                                materialIsTaught ? "opacity-50 cursor-not-allowed" : "hover:border-emerald-500 hover:text-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20"
                               )}
                             >
                               <Icon name="play_arrow" className="w-3.5 h-3.5 fill-current text-emerald-500" />

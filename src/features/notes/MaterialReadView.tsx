@@ -69,7 +69,9 @@ export function MaterialReadView() {
     return () => window.removeEventListener("keydown", handler);
   }, [navigate]);
 
-  const cls = note?.classId ? classes?.find((c) => c.id === note.classId) : null;
+  const assignedClasses = (note?.classIds ?? (note?.classId ? [note.classId] : []))
+    .map((classId) => classes?.find((c) => c.id === classId))
+    .filter(Boolean);
   const subj = note?.subjectId ? subjects?.find((s) => s.id === note.subjectId) : null;
 
   const handleDelete = async () => {
@@ -169,9 +171,14 @@ export function MaterialReadView() {
             )}>
               {format(note.createdAt, "d MMMM yyyy", { locale: currentLocale })}
             </span>
-            {cls && (
-              <span className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1 rounded-full">
+            {assignedClasses.map((cls) => cls && (
+              <span key={cls.id} className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1 rounded-full">
                 {cls.name}
+              </span>
+            ))}
+            {assignedClasses.length === 0 && (
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-500 bg-gray-100 dark:bg-white/10 px-3 py-1 rounded-full">
+                {t("materialsPage.generalAccess")}
               </span>
             )}
             {subj && (

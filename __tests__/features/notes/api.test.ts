@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getNotes, createNote, updateNote, deleteNote } from '@/features/notes/api';
+import { getNotes, getNotesByClass, createNote, updateNote, deleteNote } from '@/features/notes/api';
 import { db } from '@/db/database';
 
 vi.mock('@/db/database', () => ({
@@ -35,6 +35,7 @@ describe('Notes API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(db.notes.get).mockResolvedValue({ id: '1' } as any);
+    vi.mocked(db.classes.get).mockResolvedValue({ id: 'class-a' } as any);
   });
 
   it('should get notes by type', async () => {
@@ -62,5 +63,27 @@ describe('Notes API', () => {
       noteId: undefined,
     });
     expect(db.notes.delete).toHaveBeenCalledWith('1');
+  });
+
+  it('creates one material assigned to multiple classes', async () => {
+    const result = await createNote(
+      'AI introduction',
+      'Content',
+      'materi',
+      undefined,
+      undefined,
+      ['class-a', 'class-b'],
+    );
+
+    expect(result).toMatchObject({ classId: undefined, classIds: ['class-a', 'class-b'] });
+    expect(db.classes.get).toHaveBeenCalledWith('class-a');
+    expect(db.classes.get).toHaveBeenCalledWith('class-b');
+  });
+
+  it('queries shared materials through the multi-class index', async () => {
+    vi.mocked((db.notes as any).sortBy).mockResolvedValue([{ id: 'material-1' }] as any);
+    await getNotesByClass('class-a', 'materi');
+    expect(db.notes.where).toHaveBeenCalledWith('classIds');
+    expect((db.notes as any).equals).toHaveBeenCalledWith('class-a');
   });
 });

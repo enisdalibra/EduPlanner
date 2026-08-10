@@ -65,7 +65,9 @@ export function MaterialsView() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {notes?.map(note => {
-            const cls = note.classId ? classes?.find(c => c.id === note.classId) : null;
+            const assignedClasses = (note.classIds ?? (note.classId ? [note.classId] : []))
+              .map(classId => classes?.find(c => c.id === classId))
+              .filter(Boolean);
             const subj = note.subjectId ? subjects?.find(s => s.id === note.subjectId) : null;
             
             return (
@@ -80,7 +82,14 @@ export function MaterialsView() {
                     <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
                       {format(note.createdAt, "d MMM yyyy", { locale: currentLocale })}
                     </div>
-                    {cls && <div className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-1 rounded-full">{cls.name}</div>}
+                    {assignedClasses.map(cls => cls && (
+                      <div key={cls.id} className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-1 rounded-full">{cls.name}</div>
+                    ))}
+                    {assignedClasses.length === 0 && (
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
+                        {t('materialsPage.generalAccess')}
+                      </div>
+                    )}
                     {subj && <div className="text-[10px] font-bold uppercase tracking-wider text-success bg-success/10 px-2 py-1 rounded-full">{subj.name}</div>}
                   </div>
                 </CardHeader>

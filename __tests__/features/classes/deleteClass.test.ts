@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => {
   const makeTable = () => ({
     where: vi.fn().mockReturnThis(),
     equals: vi.fn().mockReturnThis(),
+    modify: vi.fn(),
     delete: vi.fn(),
   });
   return {
@@ -38,6 +39,8 @@ describe('deleteClass', () => {
 
   it('deletes class-owned records and enrollments without deleting student profiles', async () => {
     await deleteClass('class-1');
+    expect(mocks.notes.where).toHaveBeenCalledWith('classIds');
+    expect(mocks.notes.modify).toHaveBeenCalled();
     expect(mocks.enrollments.where).toHaveBeenCalledWith('classId');
     for (const table of [mocks.attendances, mocks.grades, mocks.notes, mocks.tasks, mocks.teachingSessions, mocks.schedules]) {
       expect(table.where).toHaveBeenCalledWith('classId');

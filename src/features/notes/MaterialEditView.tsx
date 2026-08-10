@@ -67,7 +67,7 @@ export function MaterialEditView() {
   // ── Form state ───────────────────────────────────────────────────────────────
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [classId, setClassId] = useState("all");
+  const [classIds, setClassIds] = useState<string[]>([]);
   const [subjectId, setSubjectId] = useState("none");
   const [mode, setMode] = useState<"write" | "preview">("write");
   const [initialized, setInitialized] = useState(false);
@@ -96,7 +96,7 @@ export function MaterialEditView() {
     if (!initialized && existingNote) {
       setTitle(existingNote.title);
       setContent(existingNote.content);
-      setClassId(existingNote.classId || "all");
+      setClassIds(existingNote.classIds ?? (existingNote.classId ? [existingNote.classId] : []));
       setSubjectId(existingNote.subjectId || "none");
       setInitialized(true);
     }
@@ -107,26 +107,26 @@ export function MaterialEditView() {
 
   // ── Available subjects for selected class ───────────────────────────────────
   const availableSubjects = useMemo(() => {
-    if (classId === "all" || !subjects || !enrollments) return subjects || [];
+    if (classIds.length === 0 || !subjects || !enrollments) return subjects || [];
     const classStudentIds = new Set(
-      enrollments.filter((item) => item.classId === classId && !item.endedAt).map(({ studentId }) => studentId)
+      enrollments.filter((item) => classIds.includes(item.classId) && !item.endedAt).map(({ studentId }) => studentId)
     );
     return subjects.filter((subj) =>
       (subj.assignedStudents || []).some((sid) => classStudentIds.has(sid))
     );
-  }, [subjects, classId, enrollments]);
+  }, [subjects, classIds, enrollments]);
 
   // Reset subject if no longer available
   useEffect(() => {
     if (
-      classId !== "all" &&
+      classIds.length > 0 &&
       subjectId !== "none" &&
       availableSubjects.length > 0 &&
       !availableSubjects.some((s) => s.id === subjectId)
     ) {
       setSubjectId("none");
     }
-  }, [classId, availableSubjects, subjectId]);
+  }, [classIds, availableSubjects, subjectId]);
 
   // ── Save ─────────────────────────────────────────────────────────────────────
   const handleSave = useCallback(async () => {
@@ -134,29 +134,38 @@ export function MaterialEditView() {
       toast.error(t("notesPage.errorEmptyTitle"));
       return;
     }
-    const cId = classId === "all" ? undefined : classId;
     const sId = subjectId === "none" ? undefined : subjectId;
 
     setIsSaving(true);
     try {
       if (!isNew && id) {
-        await updateNote(id, { title, content, classId: cId, subjectId: sId });
+        await updateNote(id, {
+          title,
+          content,
+          classId: undefined,
+          classIds,
+          taughtClassIds: existingNote?.taughtClassIds?.filter((assignedClassId) => classIds.includes(assignedClassId)),
+          subjectId: sId,
+        });
         toast.success(t("notesPage.successUpdate"));
       } else {
         // createNote returns the full note object with the generated ID.
         // After the first save we immediately replace the URL with the real
         // edit route so that every subsequent Ctrl+S calls updateNote instead
         // of createNote — preventing duplicate entries.
-        const newNote = await createNote(title, content, "materi", cId, sId);
+        const newNote = await createNote(title, content, "materi", undefined, sId, classIds);
         toast.success(t("notesPage.successSave"));
         navigate(`/materials/${newNote.id}/edit`, { replace: true });
       }
-    } catch {
-      toast.error(t("notesPage.errorSave"));
+    } catch (error) {
+      console.error("Failed to save teaching material", error);
+      toast.error(t("notesPage.errorSave"), {
+        description: error instanceof Error ? error.message : undefined,
+      });
     } finally {
       setIsSaving(false);
     }
-  }, [title, content, classId, subjectId, isNew, id, t, navigate]);
+  }, [title, content, classIds, subjectId, existingNote?.taughtClassIds, isNew, id, t, navigate]);
 
   // ── Keyboard shortcuts ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -280,23 +289,45 @@ export function MaterialEditView() {
       </header>
 
       {/* ── Metadata bar ── */}
-      <div className={cn("flex-none flex items-center gap-3 px-4 py-2 border-b", border, isDark ? "bg-gray-900/50" : "bg-gray-50/80")}>
+      <div className={cn("flex-none flex flex-wrap items-center gap-3 px-4 py-2 border-b", border, isDark ? "bg-gray-900/50" : "bg-gray-50/80")}>
         <span className={cn("text-xs font-medium flex-none", textMuted)}>
-          {t("notesPage.labelClass")}
+          {t("materialsPage.classAccess")}
         </span>
-        <select
-          value={classId}
-          onChange={(e) => setClassId(e.target.value)}
-          className={cn(
-            "text-xs border rounded-lg px-2 py-1 outline-none focus:ring-1 focus:ring-primary/50 transition-all",
-            selectBg
-          )}
-        >
-          <option value="all">{t("notesPage.allClasses")}</option>
-          {classes?.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
+        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+          <button
+            type="button"
+            onClick={() => setClassIds([])}
+            className={cn(
+              "text-xs border rounded-lg px-2.5 py-1 transition-all",
+              classIds.length === 0
+                ? "bg-primary text-white border-primary"
+                : selectBg
+            )}
+            title={t("materialsPage.classAccessHint")}
+          >
+            {t("materialsPage.generalAccess")}
+          </button>
+          {classes?.map((c) => {
+            const selected = classIds.includes(c.id);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setClassIds((current) =>
+                  selected ? current.filter((classId) => classId !== c.id) : [...current, c.id]
+                )}
+                className={cn(
+                  "text-xs border rounded-lg px-2.5 py-1 transition-all flex items-center gap-1",
+                  selected ? "bg-primary text-white border-primary" : selectBg
+                )}
+              >
+                {selected && <Icon name="check" className="w-3 h-3" />}
+                {c.name}
+              </button>
+            );
+          })}
+        </div>
 
         <span className={cn("text-xs font-medium flex-none", textMuted)}>
           {t("notesPage.labelSubject")}

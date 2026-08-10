@@ -192,6 +192,17 @@ function assertRecordSchema(tableName: BackupTableName, record: BackupRecord, in
       `Backup table "notes" record ${index + 1} has an invalid "isTaught" field.`,
     );
   }
+  if (tableName === "notes") {
+    for (const key of ["classIds", "taughtClassIds"]) {
+      if (hasOwn(record, key) && (
+        !Array.isArray(record[key]) || (record[key] as unknown[]).some((id) => typeof id !== "string")
+      )) {
+        throw new BackupValidationError(
+          `Backup table "notes" record ${index + 1} has an invalid "${key}" field.`,
+        );
+      }
+    }
+  }
   if (tableName === "schedules") {
     for (const key of ["dayOfWeek", "dayOfMonth", "recurrenceCount"]) {
       if (hasOwn(record, key) && record[key] !== undefined) {
@@ -242,6 +253,16 @@ function normalizeRecords(tableName: BackupTableName, value: unknown): BackupRec
     ids.add(item.id);
 
     const record = { ...item };
+    if (tableName === "notes" && record.type === "materi") {
+      record.classIds = Array.isArray(record.classIds)
+        ? [...new Set(record.classIds)]
+        : typeof record.classId === "string" ? [record.classId] : [];
+      record.taughtClassIds = Array.isArray(record.taughtClassIds)
+        ? [...new Set(record.taughtClassIds)]
+        : record.isTaught === true && typeof record.classId === "string" ? [record.classId] : [];
+      delete record.classId;
+      delete record.isTaught;
+    }
     assertRecordSchema(tableName, record, index);
     if (tableName === "notes" || tableName === "studentNotes") {
       if (!hasOwn(record, "createdAt")) {

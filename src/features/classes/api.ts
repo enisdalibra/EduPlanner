@@ -166,6 +166,10 @@ export async function deleteClass(id: string) {
       if (!(await db.classes.get(id))) throw new DomainNotFoundError('Class', id);
       await db.attendances.where('classId').equals(id).delete();
       await db.grades.where('classId').equals(id).delete();
+      await db.notes.where('classIds').equals(id).modify((note) => {
+        note.classIds = note.classIds?.filter((classId) => classId !== id);
+        note.taughtClassIds = note.taughtClassIds?.filter((classId) => classId !== id);
+      });
       await db.notes.where('classId').equals(id).delete();
       await db.tasks.where('classId').equals(id).delete();
       await db.teachingSessions.where('classId').equals(id).delete();

@@ -196,6 +196,17 @@ export function validateNote(note: Partial<Note>, isUpdate = false) {
       throw new ValidationError('Invalid note type');
     }
   }
+  for (const field of ['classIds', 'taughtClassIds'] as const) {
+    const ids = note[field];
+    if (ids !== undefined) {
+      if (!Array.isArray(ids) || ids.some((id) => typeof id !== 'string' || id.trim() === '')) {
+        throw new ValidationError(`Note ${field} must contain valid class IDs`);
+      }
+      if (new Set(ids).size !== ids.length) {
+        throw new ValidationError(`Note ${field} must not contain duplicate class IDs`);
+      }
+    }
+  }
   assertMaxLength(note.content, 'Note content', INPUT_LIMITS.noteContent);
 }
 

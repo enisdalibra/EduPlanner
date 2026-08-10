@@ -31,7 +31,7 @@ describe('referentially safe content and subject writes', () => {
         'subject-a',
       ),
     ).resolves.toMatchObject({
-      classId: 'class-a',
+      classIds: ['class-a'],
       subjectId: 'subject-a',
     });
 
@@ -49,6 +49,31 @@ describe('referentially safe content and subject writes', () => {
     ).rejects.toThrow(/Subject/);
     await expect(db.notes.get(note.id)).resolves.toMatchObject({
       subjectId: 'subject-a',
+    });
+  });
+
+  it('saves and reloads one material for multiple specific classes', async () => {
+    await db.classes.add({ id: 'class-b', name: 'Class B', academicPeriodId: 'period-test' });
+    const material = await createNote('AI introduction', 'Content', 'materi');
+
+    await updateNote(material.id, { classIds: ['class-a', 'class-b'] });
+
+    expect(await db.notes.get(material.id)).toMatchObject({
+      classIds: ['class-a', 'class-b'],
+    });
+    expect((await db.notes.where('classIds').equals('class-a').toArray()).map(({ id }) => id)).toContain(material.id);
+    expect((await db.notes.where('classIds').equals('class-b').toArray()).map(({ id }) => id)).toContain(material.id);
+  });
+
+  it('keeps shared material editable when one assigned class is archived', async () => {
+    const material = await createNote('Archived class material', 'Old content', 'materi', 'class-a');
+    await db.classes.update('class-a', { archivedAt: new Date().toISOString() });
+
+    await updateNote(material.id, { content: 'Updated content', classIds: ['class-a'] });
+
+    expect(await db.notes.get(material.id)).toMatchObject({
+      content: 'Updated content',
+      classIds: ['class-a'],
     });
   });
 

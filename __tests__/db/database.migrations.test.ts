@@ -52,6 +52,15 @@ describe('EduPlannerDB migrations', () => {
         type: 'guru',
         createdAt: new Date('2026-07-19T00:00:00.000Z'),
       });
+      await legacy.table('notes').add({
+        id: 'material-1',
+        classId: 'class-1',
+        title: 'Shared material',
+        content: 'Content',
+        type: 'materi',
+        isTaught: true,
+        createdAt: new Date('2026-07-19T00:00:00.000Z'),
+      });
       await legacy.table('tasks').add({
         id: 'task-1',
         title: 'Task',
@@ -87,6 +96,11 @@ describe('EduPlannerDB migrations', () => {
     expect(await current.attendances.get('attendance-1')).toMatchObject({ status: 'hadir' });
     expect(await current.grades.get('grade-1')).toMatchObject({ score: 90 });
     expect(await current.notes.get('note-1')).toMatchObject({ title: 'Note' });
+    expect(await current.notes.get('material-1')).toMatchObject({
+      classIds: ['class-1'],
+      taughtClassIds: ['class-1'],
+    });
+    expect((await current.notes.get('material-1'))?.classId).toBeUndefined();
     expect(await current.tasks.get('task-1')).toMatchObject({ title: 'Task' });
 
     expect(current.students.schema.indexes.map(({ name }) => name)).toContain('nis');
@@ -95,6 +109,7 @@ describe('EduPlannerDB migrations', () => {
     );
     expect(current.grades.schema.indexes.map(({ name }) => name)).toContain('[classId+subjectId]');
     expect(current.notes.schema.indexes.map(({ name }) => name)).toContain('[classId+type]');
+    expect(current.notes.schema.indexes.map(({ name }) => name)).toContain('classIds');
     expect(current.tasks.schema.indexes.map(({ name }) => name)).toContain('[classId+date]');
     expect(current.schedules.schema.indexes.map(({ name }) => name)).toEqual(
       expect.arrayContaining(['classId', 'recurrenceType', 'startDate']),

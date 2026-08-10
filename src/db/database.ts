@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 
-export const CURRENT_DATABASE_VERSION = 8;
+export const CURRENT_DATABASE_VERSION = 9;
 export const DEFAULT_DATABASE_NAME = 'EduPlannerDB';
 
 export interface Profile {
@@ -70,12 +70,16 @@ export interface Grade {
 export interface Note { 
   id: string; 
   classId?: string; 
+  /** Classes that can access a teaching material. Empty means general/unassigned. */
+  classIds?: string[];
   subjectId?: string;
   title: string; 
   content: string; 
   type: 'guru' | 'materi' | 'evaluasi'; 
   createdAt: Date; 
   isTaught?: boolean;
+  /** Per-class teaching progress for shared materials. */
+  taughtClassIds?: string[];
 }
 
 export interface Task { 
@@ -191,7 +195,7 @@ export class EduPlannerDB extends Dexie {
       schedules: 'id, classId, recurrenceType, startDate'
     });
 
-    this.version(CURRENT_DATABASE_VERSION).stores({
+    this.version(8).stores({
       academicPeriods: 'id, name, isActive, startDate, endDate',
       classes: 'id, academicPeriodId, archivedAt, name',
       students: 'id, name, nis',
@@ -234,6 +238,21 @@ export class EduPlannerDB extends Dexie {
       }
       await transaction.table('students').toCollection().modify((student: Record<string, unknown>) => {
         delete student.classId;
+      });
+    });
+
+    // Version 9: a teaching material can be shared with multiple classes.
+    this.version(CURRENT_DATABASE_VERSION).stores({
+      notes: 'id, classId, *classIds, subjectId, type, [classId+type]',
+    }).upgrade(async (transaction) => {
+      await transaction.table('notes').toCollection().modify((note: Note) => {
+        if (note.type !== 'materi') return;
+        note.classIds = note.classIds ?? (note.classId ? [note.classId] : []);
+        note.taughtClassIds = note.taughtClassIds ?? (
+          note.isTaught && note.classId ? [note.classId] : []
+        );
+        delete note.classId;
+        delete note.isTaught;
       });
     });
   }

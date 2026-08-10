@@ -240,6 +240,12 @@ export function checkIntegritySnapshot(snapshot: IntegritySnapshot): IntegrityRe
 
   for (const note of snapshot.notes) {
     addOrphan(issues, 'notes', note.id, 'classId', note.classId, 'classes', classIds);
+    for (const classId of note.classIds ?? []) {
+      addOrphan(issues, 'notes', note.id, 'classIds', classId, 'classes', classIds);
+    }
+    for (const classId of note.taughtClassIds ?? []) {
+      addOrphan(issues, 'notes', note.id, 'taughtClassIds', classId, 'classes', classIds);
+    }
     addOrphan(issues, 'notes', note.id, 'subjectId', note.subjectId, 'subjects', subjectIds);
   }
   for (const task of snapshot.tasks) {

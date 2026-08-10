@@ -41,7 +41,8 @@ async function seedEveryTable(): Promise<void> {
     });
     await db.notes.add({
       id: 'note-1',
-      classId: 'class-1',
+      classIds: ['class-1'],
+      taughtClassIds: [],
       subjectId: 'subject-1',
       title: 'Materi',
       content: 'Isi materi',
