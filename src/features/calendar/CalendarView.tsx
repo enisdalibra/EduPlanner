@@ -56,6 +56,7 @@ export function CalendarView() {
     if (typeof window !== "undefined" && "Notification" in window) {
       const res = await Notification.requestPermission();
       setPermissionStatus(res);
+      window.dispatchEvent(new Event('eduplanner:notification-permission-changed'));
       if (res === "granted") {
         toast.success(
           language === "id"

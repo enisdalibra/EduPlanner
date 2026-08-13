@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { format, isSameDay } from 'date-fns';
@@ -12,13 +12,48 @@ export function useNotificationScheduler() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const showNotificationDetails = useUiStore((state) => state.showNotificationDetails);
-
-  const schedules = useLiveQuery(() => db.schedules.toArray());
-  const classes = useLiveQuery(() => db.classes.toArray());
-  const subjects = useLiveQuery(() => db.subjects.toArray());
+  const [permission, setPermission] = useState<NotificationPermission>(() =>
+    typeof window !== 'undefined' && 'Notification' in window
+      ? Notification.permission
+      : 'denied',
+  );
 
   useEffect(() => {
-    if (!schedules || !classes) return;
+    const refreshPermission = () => {
+      if ('Notification' in window) setPermission(Notification.permission);
+    };
+
+    window.addEventListener('focus', refreshPermission);
+    window.addEventListener('eduplanner:notification-permission-changed', refreshPermission);
+    document.addEventListener('visibilitychange', refreshPermission);
+    return () => {
+      window.removeEventListener('focus', refreshPermission);
+      window.removeEventListener('eduplanner:notification-permission-changed', refreshPermission);
+      document.removeEventListener('visibilitychange', refreshPermission);
+    };
+  }, []);
+
+  const notificationsEnabled = permission === 'granted';
+  const schedules = useLiveQuery(
+    () => notificationsEnabled
+      ? db.schedules.filter((schedule) => schedule.notificationEarlyMinutes > 0).toArray()
+      : [],
+    [notificationsEnabled],
+    [],
+  );
+  const classes = useLiveQuery(
+    () => notificationsEnabled ? db.classes.toArray() : [],
+    [notificationsEnabled],
+    [],
+  );
+  const subjects = useLiveQuery(
+    () => notificationsEnabled ? db.subjects.toArray() : [],
+    [notificationsEnabled],
+    [],
+  );
+
+  useEffect(() => {
+    if (!notificationsEnabled || schedules.length === 0) return;
 
     const checkSchedulesAndNotify = () => {
       // Check browser notification permission first
@@ -108,5 +143,5 @@ export function useNotificationScheduler() {
     const intervalId = setInterval(checkSchedulesAndNotify, 30000);
 
     return () => clearInterval(intervalId);
-  }, [schedules, classes, subjects, showNotificationDetails, navigate, t]);
+  }, [notificationsEnabled, schedules, classes, subjects, showNotificationDetails, navigate, t]);
 }

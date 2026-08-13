@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Outlet } from "react-router";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
@@ -9,6 +10,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useUiStore } from "@/store/uiStore";
 import { cn } from "@/lib/utils";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { RouteLoader } from "@/components/ui/RouteLoader";
 
 export function AppLayout() {
   useKeyboardShortcuts();
@@ -29,7 +31,9 @@ export function AppLayout() {
               <div className="mx-auto max-w-7xl">
                 <ErrorBoundary>
                   <div className="view-enter">
-                    <Outlet />
+                    <Suspense fallback={<RouteLoader />}>
+                      <Outlet />
+                    </Suspense>
                   </div>
                 </ErrorBoundary>
               </div>

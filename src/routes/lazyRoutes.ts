@@ -1,0 +1,64 @@
+import { lazy } from "react";
+
+const loadDashboard = () => import("@/features/dashboard/DashboardView");
+const loadProfile = () => import("@/features/profile/ProfileView");
+const loadClasses = () => import("@/features/classes/ClassesView");
+const loadClassDetail = () => import("@/features/classes/ClassDetailView");
+const loadAttendance = () => import("@/features/attendance/AttendanceView");
+const loadGradebook = () => import("@/features/grades/GradebookView");
+const loadMaterials = () => import("@/features/notes/MaterialsView");
+const loadPresentation = () => import("@/features/notes/PresentationView");
+const loadMaterialRead = () => import("@/features/notes/MaterialReadView");
+const loadMaterialEdit = () => import("@/features/notes/MaterialEditView");
+const loadJournals = () => import("@/features/notes/JournalsView");
+const loadEvaluations = () => import("@/features/notes/EvaluationsView");
+const loadQuiz = () => import("@/features/notes/QuizView");
+const loadCalendar = () => import("@/features/calendar/CalendarView");
+const loadSettings = () => import("@/features/settings/SettingsView");
+const loadSubjects = () => import("@/features/subjects/SubjectsView");
+const loadStudents = () => import("@/features/students/StudentsView");
+const loadStudentDetail = () => import("@/features/students/StudentDetailView");
+const loadAbout = () => import("@/features/about/AboutView");
+
+export const DashboardView = lazy(() => loadDashboard().then(({ DashboardView }) => ({ default: DashboardView })));
+export const ProfileView = lazy(() => loadProfile().then(({ ProfileView }) => ({ default: ProfileView })));
+export const ClassesView = lazy(() => loadClasses().then(({ ClassesView }) => ({ default: ClassesView })));
+export const ClassDetailView = lazy(() => loadClassDetail().then(({ ClassDetailView }) => ({ default: ClassDetailView })));
+export const AttendanceView = lazy(() => loadAttendance().then(({ AttendanceView }) => ({ default: AttendanceView })));
+export const GradebookView = lazy(() => loadGradebook().then(({ GradebookView }) => ({ default: GradebookView })));
+export const MaterialsView = lazy(() => loadMaterials().then(({ MaterialsView }) => ({ default: MaterialsView })));
+export const PresentationView = lazy(() => loadPresentation().then(({ PresentationView }) => ({ default: PresentationView })));
+export const MaterialReadView = lazy(() => loadMaterialRead().then(({ MaterialReadView }) => ({ default: MaterialReadView })));
+export const MaterialEditView = lazy(() => loadMaterialEdit().then(({ MaterialEditView }) => ({ default: MaterialEditView })));
+export const JournalsView = lazy(() => loadJournals().then(({ JournalsView }) => ({ default: JournalsView })));
+export const EvaluationsView = lazy(() => loadEvaluations().then(({ EvaluationsView }) => ({ default: EvaluationsView })));
+export const QuizView = lazy(() => loadQuiz().then(({ QuizView }) => ({ default: QuizView })));
+export const CalendarView = lazy(() => loadCalendar().then(({ CalendarView }) => ({ default: CalendarView })));
+export const SettingsView = lazy(() => loadSettings().then(({ SettingsView }) => ({ default: SettingsView })));
+export const SubjectsView = lazy(() => loadSubjects().then(({ SubjectsView }) => ({ default: SubjectsView })));
+export const StudentsView = lazy(() => loadStudents().then(({ StudentsView }) => ({ default: StudentsView })));
+export const StudentDetailView = lazy(() => loadStudentDetail().then(({ StudentDetailView }) => ({ default: StudentDetailView })));
+export const AboutView = lazy(() => loadAbout().then(({ AboutView }) => ({ default: AboutView })));
+
+export function preloadRoute(pathname: string): Promise<unknown> {
+  if (pathname === "/") return loadDashboard();
+  if (pathname === "/profile") return loadProfile();
+  if (pathname === "/subjects") return loadSubjects();
+  if (pathname === "/classes") return loadClasses();
+  if (pathname.startsWith("/classes/")) return loadClassDetail();
+  if (pathname === "/students") return loadStudents();
+  if (pathname.startsWith("/students/")) return loadStudentDetail();
+  if (pathname === "/attendance") return loadAttendance();
+  if (pathname === "/grades") return loadGradebook();
+  if (pathname === "/materials") return loadMaterials();
+  if (pathname === "/journals") return loadJournals();
+  if (pathname === "/evaluations") return loadEvaluations();
+  if (/^\/evaluations\/[^/]+\/quiz$/.test(pathname)) return loadQuiz();
+  if (pathname === "/calendar") return loadCalendar();
+  if (pathname === "/settings") return loadSettings();
+  if (pathname === "/about") return loadAbout();
+  if (/^\/materials\/[^/]+\/present$/.test(pathname)) return loadPresentation();
+  if (pathname === "/materials/new" || /^\/materials\/[^/]+\/edit$/.test(pathname)) return loadMaterialEdit();
+  if (/^\/materials\/[^/]+\/view$/.test(pathname)) return loadMaterialRead();
+  return Promise.resolve();
+}

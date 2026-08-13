@@ -15,17 +15,25 @@ export function calculateTeachingStats(
   const locale = language === 'id' ? localeId : undefined;
   let totalMinutes = 0;
   let totalSessions = 0;
+  const sessionsByMonth = new Map<string, { minutes: number; sessions: number }>();
+  for (const session of sessions) {
+    const key = session.date.slice(0, 7);
+    const current = sessionsByMonth.get(key) ?? { minutes: 0, sessions: 0 };
+    current.minutes += session.durationMinutes;
+    current.sessions += 1;
+    sessionsByMonth.set(key, current);
+  }
+
   const chartData = Array.from({ length: chartMonths }, (_, index) => {
     const date = subMonths(now, chartMonths - 1 - index);
     const key = format(date, 'yyyy-MM');
-    const monthSessions = sessions.filter((session) => session.date.startsWith(key));
-    const minutes = monthSessions.reduce((sum, session) => sum + session.durationMinutes, 0);
-    totalMinutes += minutes;
-    totalSessions += monthSessions.length;
+    const monthStats = sessionsByMonth.get(key) ?? { minutes: 0, sessions: 0 };
+    totalMinutes += monthStats.minutes;
+    totalSessions += monthStats.sessions;
     return {
       month: format(date, 'MMM yyyy', { locale }),
-      hours: Number((minutes / 60).toFixed(1)),
-      sessions: monthSessions.length,
+      hours: Number((monthStats.minutes / 60).toFixed(1)),
+      sessions: monthStats.sessions,
     };
   });
   return {
@@ -83,11 +91,13 @@ export function useDashboardStats(chartMonths: 6 | 12, language: 'id' | 'en') {
     const guruNotes = notes.filter((note) => note.type === 'guru').length;
     const notesMaximum = Math.max(notes.length, 5);
     const nowTime = format(now, 'HH:mm');
+    const classesById = new Map(classes.map((item) => [item.id, item]));
+    const subjectsById = new Map(subjects.map((item) => [item.id, item]));
 
     const todayClasses = schedules.flatMap((schedule) => {
       const occursToday = getScheduleOccurrences(schedule, now)
         .some((occurrence) => format(occurrence, 'yyyy-MM-dd') === today);
-      const cls = classes.find((item) => item.id === schedule.classId);
+      const cls = classesById.get(schedule.classId);
       if (!occursToday || !cls) return [];
       const status = schedule.endTime < nowTime
         ? 'finished'
@@ -97,7 +107,7 @@ export function useDashboardStats(chartMonths: 6 | 12, language: 'id' | 'en') {
       return [{
         schedule,
         class: cls,
-        subject: subjects.find((subject) => subject.id === schedule.subjectId),
+        subject: schedule.subjectId ? subjectsById.get(schedule.subjectId) : undefined,
         status: status as 'finished' | 'ongoing' | 'upcoming',
       }];
     }).sort((a, b) => a.schedule.startTime.localeCompare(b.schedule.startTime));

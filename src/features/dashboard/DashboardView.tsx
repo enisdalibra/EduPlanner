@@ -1,23 +1,39 @@
 import { Link } from "react-router";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
-import { useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Icon } from "@/components/ui/icon";
-import { BackupService } from "@/services/BackupService";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useDashboardStats } from "./hooks/useDashboardStats";
+
+const TeachingStatsChart = lazy(() =>
+  import("./components/TeachingStatsChart").then(({ TeachingStatsChart }) => ({ default: TeachingStatsChart })),
+);
 
 export function DashboardView() {
   const { t, language } = useTranslation();
   const [isExporting, setIsExporting] = useState(false);
   const [chartMonths, setChartMonths] = useState<6 | 12>(6);
+  const [chartReady, setChartReady] = useState(false);
   const { stats, teachingStats, storageUsage } = useDashboardStats(chartMonths, language);
+
+  useEffect(() => {
+    if (!stats) return;
+
+    if (typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(() => setChartReady(true), { timeout: 1_200 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = window.setTimeout(() => setChartReady(true), 250);
+    return () => window.clearTimeout(timeoutId);
+  }, [stats]);
 
   const handleExport = async () => {
     setIsExporting(true);
     try {
+      const { BackupService } = await import("@/services/BackupService");
       const jsonString = await BackupService.generateExportPayload(2);
       const blob = new Blob([jsonString], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -38,7 +54,14 @@ export function DashboardView() {
     }
   };
 
-  const recentNotes = stats?.notes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3) || [];
+  const recentNotes = useMemo(
+    () => stats?.notes
+      ? [...stats.notes]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 3)
+      : [],
+    [stats?.notes],
+  );
   const activeTasks = stats?.activeTasks || 0;
   const totalClasses = stats?.classes || 0;
   const todayClasses = stats?.todayClasses || [];
@@ -358,54 +381,17 @@ export function DashboardView() {
 
           {/* Area Chart Container */}
           <div className="flex-1 min-h-[180px]">
-            {teachingStats.chartData.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-                {t('common.empty')}
-              </div>
+            {chartReady ? (
+              <Suspense fallback={<div className="h-full rounded-2xl bg-gray-100/70 dark:bg-gray-800/50 animate-pulse" />}>
+                <TeachingStatsChart
+                  data={teachingStats.chartData}
+                  emptyLabel={t('common.empty')}
+                  hoursLabel={t('dashboard.hours')}
+                  titleLabel={t('dashboard.teachingHoursTitle')}
+                />
+              </Suspense>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={teachingStats.chartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-primary, #6246ea)" stopOpacity={0.25}/>
-                      <stop offset="95%" stopColor="var(--color-primary, #6246ea)" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:stroke-gray-800" />
-                  <XAxis 
-                    dataKey="month" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} 
-                    dy={8} 
-                  />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} 
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: '16px',
-                      border: '1px solid #f1f5f9',
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
-                      background: 'var(--color-card, #ffffff)',
-                      color: 'var(--color-text, #2b2c34)',
-                      fontSize: '11px',
-                      fontWeight: 'bold'
-                    }}
-                    formatter={(value: number) => [`${value} ${t('dashboard.hours')}`, t('dashboard.teachingHoursTitle')]}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="hours" 
-                    stroke="var(--color-primary, #6246ea)" 
-                    strokeWidth={2.5} 
-                    fillOpacity={1} 
-                    fill="url(#colorHours)" 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div className="h-full rounded-2xl bg-gray-100/70 dark:bg-gray-800/50 animate-pulse" aria-hidden="true" />
             )}
           </div>
         </div>

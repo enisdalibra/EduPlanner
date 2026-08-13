@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useSyncStore } from '@/store/syncStore';
-import { SyncService } from '@/services/SyncService';
 
 // Sync interval: 5 minutes
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
@@ -16,6 +15,7 @@ export function useAutoSync() {
       
       try {
         setIsSyncing(true);
+        const { SyncService } = await import('@/services/SyncService');
         const result = await SyncService.uploadBackup(provider);
         setLastSynced(result.uploadedAt);
       } catch (error) {

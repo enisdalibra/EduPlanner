@@ -54,9 +54,12 @@ const subset = await subsetFont(
   {
     targetFormat: 'woff2',
     variationAxes: {
-      wght: { min: 300, max: 500, default: 400 },
+      // Icon.tsx renders a single, consistent outline style. Pinning every
+      // variable axis removes variation data that the browser never uses.
+      FILL: 0,
+      wght: 400,
       GRAD: 0,
-      opsz: { min: 20, max: 48, default: 24 },
+      opsz: 24,
     },
   },
 );

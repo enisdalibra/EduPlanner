@@ -6,6 +6,13 @@ import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 import { SHORTCUTS } from "@/hooks/useKeyboardShortcuts";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Icon } from "@/components/ui/icon";
+import { preloadRoute } from "@/routes/lazyRoutes";
+
+function warmRoute(pathname: string) {
+  void preloadRoute(pathname).catch(() => {
+    // A failed prefetch must never block normal navigation, which will retry it.
+  });
+}
 
 export function Sidebar() {
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed } = useUiStore();
@@ -72,6 +79,9 @@ export function Sidebar() {
                 <NavLink
                   to={item.href}
                   onClick={() => setSidebarOpen(false)}
+                  onPointerEnter={() => warmRoute(item.href)}
+                  onFocus={() => warmRoute(item.href)}
+                  onTouchStart={() => warmRoute(item.href)}
                   className={({ isActive }) => cn(
                     "flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-colors",
                     isActive 
@@ -93,6 +103,9 @@ export function Sidebar() {
             <NavLink
               to="/settings"
               onClick={() => setSidebarOpen(false)}
+              onPointerEnter={() => warmRoute("/settings")}
+              onFocus={() => warmRoute("/settings")}
+              onTouchStart={() => warmRoute("/settings")}
               className={({ isActive }) => cn(
                 "flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-colors",
                 isActive 
@@ -110,6 +123,9 @@ export function Sidebar() {
             <NavLink
               to="/about"
               onClick={() => setSidebarOpen(false)}
+              onPointerEnter={() => warmRoute("/about")}
+              onFocus={() => warmRoute("/about")}
+              onTouchStart={() => warmRoute("/about")}
               className={({ isActive }) => cn(
                 "flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-colors mb-2",
                 isActive 
