@@ -23,6 +23,7 @@ export const SHORTCUTS = [
   { key: 'Alt + Shift + N', description: 'Ke Halaman Materi Ajar', tKey: 'desc_N', path: '/materials' },
   { key: 'Alt + Shift + J', description: 'Ke Halaman Jurnal Guru', tKey: 'desc_J', path: '/journals' },
   { key: 'Alt + Shift + E', description: 'Ke Halaman Soal Evaluasi', tKey: 'desc_E', path: '/evaluations' },
+  { key: 'Alt + Shift + L', description: 'Ke Halaman Log Mengajar', tKey: 'desc_L', path: '/teaching-logs' },
   { key: 'Alt + Shift + T', description: 'Ke Halaman Kalender (Tasks)', tKey: 'desc_T', path: '/calendar' },
   { key: 'Alt + Shift + B', description: 'Ke Halaman Pengaturan & Backup', tKey: 'desc_B', path: '/settings' },
   { key: 'Alt + Shift + H', description: 'Ke Halaman Bantuan (Help/About)', tKey: 'desc_H', path: '/about' },
@@ -95,6 +96,7 @@ export function useKeyboardShortcuts() {
           case 'KeyN': navigate('/materials'); matched = true; break;
           case 'KeyJ': navigate('/journals'); matched = true; break;
           case 'KeyE': navigate('/evaluations'); matched = true; break;
+          case 'KeyL': navigate('/teaching-logs'); matched = true; break;
           case 'KeyT': navigate('/calendar'); matched = true; break;
           case 'KeyB': navigate('/settings'); matched = true; break;
           case 'KeyH': navigate('/about'); matched = true; break;

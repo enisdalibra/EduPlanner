@@ -13,6 +13,7 @@ const loadMaterialEdit = () => import("@/features/notes/MaterialEditView");
 const loadJournals = () => import("@/features/notes/JournalsView");
 const loadEvaluations = () => import("@/features/notes/EvaluationsView");
 const loadQuiz = () => import("@/features/notes/QuizView");
+const loadTeachingLogs = () => import("@/features/teaching/TeachingLogsView");
 const loadCalendar = () => import("@/features/calendar/CalendarView");
 const loadSettings = () => import("@/features/settings/SettingsView");
 const loadSubjects = () => import("@/features/subjects/SubjectsView");
@@ -33,6 +34,7 @@ export const MaterialEditView = lazy(() => loadMaterialEdit().then(({ MaterialEd
 export const JournalsView = lazy(() => loadJournals().then(({ JournalsView }) => ({ default: JournalsView })));
 export const EvaluationsView = lazy(() => loadEvaluations().then(({ EvaluationsView }) => ({ default: EvaluationsView })));
 export const QuizView = lazy(() => loadQuiz().then(({ QuizView }) => ({ default: QuizView })));
+export const TeachingLogsView = lazy(() => loadTeachingLogs().then(({ TeachingLogsView }) => ({ default: TeachingLogsView })));
 export const CalendarView = lazy(() => loadCalendar().then(({ CalendarView }) => ({ default: CalendarView })));
 export const SettingsView = lazy(() => loadSettings().then(({ SettingsView }) => ({ default: SettingsView })));
 export const SubjectsView = lazy(() => loadSubjects().then(({ SubjectsView }) => ({ default: SubjectsView })));
@@ -54,6 +56,7 @@ export function preloadRoute(pathname: string): Promise<unknown> {
   if (pathname === "/journals") return loadJournals();
   if (pathname === "/evaluations") return loadEvaluations();
   if (/^\/evaluations\/[^/]+\/quiz$/.test(pathname)) return loadQuiz();
+  if (pathname === "/teaching-logs") return loadTeachingLogs();
   if (pathname === "/calendar") return loadCalendar();
   if (pathname === "/settings") return loadSettings();
   if (pathname === "/about") return loadAbout();

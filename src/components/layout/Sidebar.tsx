@@ -1,5 +1,4 @@
 import { NavLink } from "react-router";
-;
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/store/uiStore";
 import { SimpleTooltip } from "@/components/ui/simple-tooltip";
@@ -29,6 +28,7 @@ export function Sidebar() {
     { icon: "menu_book", label: t('sidebar.materials'), href: "/materials" },
     { icon: "edit_note", label: t('sidebar.journals'), href: "/journals" },
     { icon: "analytics", label: t('sidebar.evaluations'), href: "/evaluations" },
+    { icon: "history", label: t('sidebar.teachingLogs'), href: "/teaching-logs" },
     { icon: "calendar_month", label: t('sidebar.calendar'), href: "/calendar" },
   ];
 

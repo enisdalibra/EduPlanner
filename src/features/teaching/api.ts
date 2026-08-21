@@ -28,3 +28,17 @@ export async function recordTeachingSession(input: TeachingSessionInput): Promis
     },
   );
 }
+
+export async function getTeachingSessions(): Promise<TeachingSession[]> {
+  return await db.teachingSessions.reverse().sortBy('startTime');
+}
+
+export async function deleteTeachingSession(id: string): Promise<void> {
+  return db.transaction('rw', [db.teachingSessions], async () => {
+    const existing = await db.teachingSessions.get(id);
+    if (!existing) {
+      throw new DomainNotFoundError('TeachingSession', id);
+    }
+    await db.teachingSessions.delete(id);
+  });
+}

@@ -25,6 +25,7 @@ import {
   StudentDetailView,
   StudentsView,
   SubjectsView,
+  TeachingLogsView,
 } from "./routes/lazyRoutes";
 
 export default function App() {
@@ -47,6 +48,7 @@ export default function App() {
                 <Route path="/materials" element={<MaterialsView />} />
                 <Route path="/journals" element={<JournalsView />} />
                 <Route path="/evaluations" element={<EvaluationsView />} />
+                <Route path="/teaching-logs" element={<TeachingLogsView />} />
                 <Route path="/calendar" element={<CalendarView />} />
                 <Route path="/settings" element={<SettingsView />} />
                 <Route path="/about" element={<AboutView />} />
