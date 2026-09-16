@@ -452,46 +452,46 @@ export function PresentationView() {
         </div>
       </main>
 
-      {/* ── Click zones: left = prev, right = next (invisible, full height) ── */}
-      {/* These sit above the main content via pointer-events but below it visually */}
-      {/* Left zone */}
-      {slide.kind === "material" && !isFirst && (
-        <button
-          aria-label={t('presentationView.prev')}
-          onClick={goPrev}
-          className={cn(
-            "fixed left-0 top-12 bottom-0 w-1/3 z-30 cursor-w-resize group",
-            "bg-transparent border-0 outline-none focus:outline-none"
-          )}
-        >
-          {/* subtle arrow hint on hover */}
-          <div className={cn(
-            "absolute left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-30 transition-opacity duration-300",
-            isDark ? "text-white" : "text-gray-600"
-          )}>
-            <Icon name="chevron_left" className="w-10 h-10" />
-          </div>
-        </button>
-      )}
-
-      {/* Right zone */}
+      {/* Viewport-fixed edge gutters — outside slide content so zoom/scale cannot enlarge them. */}
       {slide.kind === "material" && (
-        <button
-          aria-label={isLast ? t('presentationView.finish') : t('presentationView.next')}
-          onClick={isLast ? () => navigate('/materials') : goNext}
-          className={cn(
-            "fixed right-0 top-12 bottom-0 w-1/3 z-30 cursor-e-resize group",
-            "bg-transparent border-0 outline-none focus:outline-none"
+        <div className="pointer-events-none fixed inset-0 z-30">
+          {!isFirst && (
+            <button
+              type="button"
+              aria-label={t('presentationView.prev')}
+              onClick={goPrev}
+              className={cn(
+                "pointer-events-auto absolute left-0 top-12 bottom-0 cursor-w-resize group",
+                "w-[clamp(3rem,4.5vw,4.5rem)]",
+                "bg-transparent border-0 outline-none focus:outline-none"
+              )}
+            >
+              <div className={cn(
+                "absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-30 transition-opacity duration-300",
+                isDark ? "text-white" : "text-gray-600"
+              )}>
+                <Icon name="chevron_left" className="w-8 h-8" />
+              </div>
+            </button>
           )}
-        >
-          {/* subtle arrow hint on hover */}
-          <div className={cn(
-            "absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-30 transition-opacity duration-300",
-            isDark ? "text-white" : "text-gray-600"
-          )}>
-            <Icon name={isLast ? "done_all" : "chevron_right"} className="w-10 h-10" />
-          </div>
-        </button>
+          <button
+            type="button"
+            aria-label={isLast ? t('presentationView.finish') : t('presentationView.next')}
+            onClick={isLast ? () => navigate('/materials') : goNext}
+            className={cn(
+              "pointer-events-auto absolute right-0 top-12 bottom-0 cursor-e-resize group",
+              "w-[clamp(3rem,4.5vw,4.5rem)]",
+              "bg-transparent border-0 outline-none focus:outline-none"
+            )}
+          >
+            <div className={cn(
+              "absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-30 transition-opacity duration-300",
+              isDark ? "text-white" : "text-gray-600"
+            )}>
+              <Icon name={isLast ? "done_all" : "chevron_right"} className="w-8 h-8" />
+            </div>
+          </button>
+        </div>
       )}
 
       {slide.kind === "quiz" && (
