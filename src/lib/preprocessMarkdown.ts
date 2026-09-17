@@ -19,8 +19,14 @@
 
 // Matches a full Markdown image whose alt starts with a float keyword:
 //   ![kiri|…](url)  or  ![kanan|300px|caption](url)  etc.
+//
+// The URL part accepts balanced parentheses (CommonMark allows them in image
+// destinations). A naive [^)]+ pattern truncates URLs like
+//   .../220px-Sel_(biologi).jpg
+// at the first ")", producing an unbalanced "![...](..." fragment that renders
+// as literal text instead of an image and leaves ".jpg)" residue in the body.
 const FLOAT_IMAGE_RE =
-  /!\[(?:kiri|kanan|left|right)(?:\|[^\]]*)?]\([^)]+\)/gi;
+  /!\[(?:kiri|kanan|left|right)(?:\|[^\]]*)?]\((?:[^()\s]|\((?:[^()\s]|\([^()\s]*\))*\))*\)/gi;
 
 export function preprocessMarkdown(content: string): string {
   if (!content) return content;
