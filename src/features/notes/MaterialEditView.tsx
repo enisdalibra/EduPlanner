@@ -3,10 +3,10 @@ import { useParams, useNavigate } from "react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
 import { createNote, updateNote } from "./api";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+
 import { preprocessMarkdown } from "@/lib/preprocessMarkdown";
-import { MarkdownImage } from "@/components/ui/MarkdownImage";
+
 import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { toast } from "sonner";
@@ -22,21 +22,6 @@ function useIsDark(): boolean {
   if (theme === "dark") return true;
   if (theme === "light") return false;
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
-}
-
-// ─── Shared markdown components ───────────────────────────────────────────────
-
-function makeMarkdownComponents(isDark: boolean) {
-  return {
-    p: ({ node, children, ...props }: any) => {
-      const onlyImage =
-        node?.children?.length === 1 &&
-        node.children[0].type === "element" &&
-        node.children[0].tagName === "img";
-      return onlyImage ? <>{children}</> : <p {...props}>{children}</p>;
-    },
-    img: ({ src, alt }: any) => <MarkdownImage src={src} alt={alt} isDark={isDark} />,
-  };
 }
 
 // ─── Word counter ─────────────────────────────────────────────────────────────
@@ -378,12 +363,12 @@ export function MaterialEditView() {
                   "prose md:prose-lg dark:prose-invert max-w-none markdown-body flow-root",
                   isDark && "prose-invert"
                 )}>
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={makeMarkdownComponents(isDark)}
-                  >
+                  <MarkdownRenderer isDark={isDark}>
+
+
+
                     {preprocessMarkdown(content)}
-                  </ReactMarkdown>
+                  </MarkdownRenderer>
                 </div>
               ) : (
                 <div className={cn("text-center py-24 text-sm", textMuted)}>
@@ -409,6 +394,10 @@ export function MaterialEditView() {
           <code className="opacity-80">![kanan|40%|alt](url)</code>
           <span className="opacity-50 mx-1">-</span>
           <code className="opacity-80">![[url|left]]</code>
+          <span className="opacity-50 mx-1">-</span>
+          <code className="opacity-80">$E=mc^2$</code>
+          <span className="opacity-50 mx-1">-</span>
+          <code className="opacity-80">$$x=\frac{'{'}a{'}'}{'{'}b{'}'}$$</code>
         </div>
 
         {/* Right: shortcuts + word count */}

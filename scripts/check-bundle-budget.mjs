@@ -7,7 +7,7 @@ const manifest = JSON.parse(await readFile(path.join(dist, '.vite', 'manifest.js
 const limits = {
   initialJavaScript: 750 * 1024,
   lazyChunk: 500 * 1024,
-  precache: 2.5 * 1024 * 1024,
+  precache: 3.2 * 1024 * 1024,
 };
 
 const initialFiles = new Set();
@@ -65,5 +65,5 @@ if (precache > limits.precache) failures.push('offline precache');
 
 console.log(`Initial JS: ${(initialJavaScript / 1024).toFixed(1)} / 750 KiB`);
 console.log(`Largest lazy chunk: ${((largestLazy?.size ?? 0) / 1024).toFixed(1)} / 500 KiB`);
-console.log(`Offline precache: ${(precache / 1024 / 1024).toFixed(2)} / 2.50 MiB`);
+console.log(`Offline precache: ${(precache / 1024 / 1024).toFixed(2)} / 3.20 MiB`);
 if (failures.length) throw new Error(`Bundle budget exceeded: ${failures.join(', ')}`);

@@ -2,12 +2,12 @@ import React, { useState, useCallback, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+
 import { useTranslation } from "@/hooks/useTranslation";
 import { useTheme } from "@/hooks/useTheme";
 import { preprocessMarkdown } from "@/lib/preprocessMarkdown";
-import { MarkdownImage } from "@/components/ui/MarkdownImage";
+
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { parsePresentation, type PresentationSlide } from "@/lib/presentationParser";
@@ -318,7 +318,7 @@ export function PresentationView() {
                 </span>
               </div>
               <h2 className={cn("text-4xl md:text-5xl font-black leading-tight tracking-tight", headingText)}>
-                {slide.heading}
+                <MarkdownRenderer inline isDark={isDark}>{slide.heading}</MarkdownRenderer>
               </h2>
             </div>
           )}
@@ -330,7 +330,7 @@ export function PresentationView() {
                 <Icon name="menu_book" className="text-[40px] text-primary" />
               </div>
               <h1 className={cn("text-5xl md:text-6xl font-black leading-tight tracking-tight mb-2", headingText)}>
-                {slide.heading}
+                <MarkdownRenderer inline isDark={isDark}>{slide.heading}</MarkdownRenderer>
               </h1>
             </div>
           )}
@@ -339,27 +339,9 @@ export function PresentationView() {
           {slide.kind === "material" && slide.body && (
             // flow-root establishes a new BFC so floated images are properly contained
             <div className={cn(proseClass, "flow-root")}>
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  // Unwrap paragraphs that contain only an image.
-                  // react-markdown wraps <img> in <p>, creating invalid <p><figure> HTML.
-                  // Browsers auto-correct this by ejecting the <figure> out of the <p>,
-                  // which breaks the BFC and prevents text from wrapping the float.
-                  p: ({ node, children, ...props }) => {
-                    const onlyImage =
-                      node?.children?.length === 1 &&
-                      node.children[0].type === 'element' &&
-                      (node.children[0] as { tagName?: string }).tagName === 'img';
-                    return onlyImage ? <>{children}</> : <p {...props}>{children}</p>;
-                  },
-                  img: ({ src, alt }) => (
-                    <MarkdownImage src={src} alt={alt} isDark={isDark} presentationMode />
-                  )
-                }}
-              >
+              <MarkdownRenderer isDark={isDark} presentationMode>
                 {preprocessMarkdown(slide.body)}
-              </ReactMarkdown>
+              </MarkdownRenderer>
             </div>
           )}
 
@@ -368,23 +350,9 @@ export function PresentationView() {
             <div className="space-y-5 pb-20">
               {slide.question.questionMarkdown && (
                 <div className={cn(proseClass, "max-w-none mb-7")}>
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      p: ({ node, children, ...props }) => {
-                        const onlyImage =
-                          node?.children?.length === 1 &&
-                          node.children[0].type === 'element' &&
-                          (node.children[0] as { tagName?: string }).tagName === 'img';
-                        return onlyImage ? <>{children}</> : <p {...props}>{children}</p>;
-                      },
-                      img: ({ src, alt }) => (
-                        <MarkdownImage src={src} alt={alt} isDark={isDark} presentationMode />
-                      ),
-                    }}
-                  >
+                  <MarkdownRenderer isDark={isDark} presentationMode>
                     {preprocessMarkdown(slide.question.questionMarkdown)}
-                  </ReactMarkdown>
+                  </MarkdownRenderer>
                 </div>
               )}
 
@@ -417,7 +385,11 @@ export function PresentationView() {
                       )}>
                         {OPTION_LETTERS[optionIndex] || optionIndex + 1}
                       </span>
-                      <span className={cn("text-lg font-medium", headingText)}>{option.text}</span>
+                      <span className={cn("text-lg font-medium", headingText)}>
+                        <MarkdownRenderer inline isDark={isDark}>
+                          {option.text}
+                        </MarkdownRenderer>
+                      </span>
                       {isRevealed && option.isCorrect && <Icon name="check_circle" className="ml-auto text-success text-[28px]" />}
                       {isRevealed && isSelected && !option.isCorrect && <Icon name="cancel" className="ml-auto text-danger text-[28px]" />}
                     </button>
@@ -433,10 +405,17 @@ export function PresentationView() {
                     : "border-danger/30 bg-danger/10 text-danger"
                 )}>
                   <Icon name={currentAnswer.isCorrect ? "check_circle" : "cancel"} className="text-[28px]" />
-                  <span>
-                    {currentAnswer.isCorrect
-                      ? t('quizView.answeredCorrectly').replace('{{pts}}', String(slide.question.pointValue))
-                      : `${t('quizView.answeredWrong')} ${slide.question.options.find(option => option.isCorrect)?.text}`}
+                  <span className="flex items-center gap-1.5 flex-wrap">
+                    {currentAnswer.isCorrect ? (
+                      t('quizView.answeredCorrectly').replace('{{pts}}', String(slide.question.pointValue))
+                    ) : (
+                      <>
+                        <span>{t('quizView.answeredWrong')}</span>
+                        <MarkdownRenderer inline isDark={isDark}>
+                          {slide.question.options.find(option => option.isCorrect)?.text || ""}
+                        </MarkdownRenderer>
+                      </>
+                    )}
                   </span>
                 </div>
               )}

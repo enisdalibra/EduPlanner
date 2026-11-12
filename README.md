@@ -267,7 +267,7 @@ The current Dexie database contains:
 - Zustand
 - React Router using `HashRouter`
 - TanStack React Virtual
-- React Markdown and remark-gfm
+- React Markdown, remark-gfm, remark-math, and KaTeX for LaTeX rendering
 - Recharts and date-fns
 - Self-hosted, build-time-subset Material Symbols Rounded icons
 - `read-excel-file` and `write-excel-file` for `.xlsx` roster files
@@ -311,7 +311,7 @@ and writer only when their actions are requested, and enforce these limits:
 
 - initial JavaScript: 750 KiB uncompressed;
 - any lazy JavaScript chunk: 500 KiB uncompressed;
-- total offline precache: 2.5 MiB.
+- total offline precache: 3.2 MiB.
 
 `npm run build` fails if a budget is exceeded or the generated service worker does
 not precache the application shell and all generated assets.

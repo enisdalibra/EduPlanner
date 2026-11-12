@@ -78,4 +78,33 @@ describe("QuizView", () => {
     // Correct feedback should appear
     expect(screen.getByText(/Benar!/)).toBeInTheDocument();
   });
+
+  it("renders LaTeX formulas in questions and answer options", () => {
+    const mathMockNote = {
+      id: "quiz-math",
+      title: "Kuis Matematika",
+      content: `
+## Soal 1
+Berapakah turunan dari $f(x) = x^2$?
+* $f'(x) = 2x$ [*]
+* $f'(x) = x$
+* $f'(x) = 2$
+* $f'(x) = x^2$
+      `,
+    };
+    currentMockNote = mathMockNote as any;
+
+    const { container } = render(
+      <MemoryRouter initialEntries={["/evaluations/quiz-math/quiz"]}>
+        <Routes>
+          <Route path="/evaluations/:id/quiz" element={<QuizView />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText("Kuis Matematika")).toBeInTheDocument();
+    // KaTeX elements should be present in question and option buttons
+    const katexElements = container.querySelectorAll(".katex");
+    expect(katexElements.length).toBeGreaterThanOrEqual(2);
+  });
 });

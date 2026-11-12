@@ -322,3 +322,16 @@ material-symbols-rounded-subset.woff2.
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+
+KaTeX fonts
+-----------
+
+Source package: katex
+Upstream project: https://github.com/KaTeX/KaTeX
+
+Copyright (c) 2013-2020 Khan Academy and other contributors
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is identical to the SIL Open Font License text copied above
+in the Inter font section.

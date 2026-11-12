@@ -119,6 +119,7 @@ export default defineConfig(({ command }) => ({
         manualChunks(id) {
           if (id.includes('node_modules/read-excel-file')) return 'excel-reader';
           if (id.includes('node_modules/write-excel-file')) return 'excel-writer';
+          if (id.includes('node_modules/katex') || id.includes('node_modules/rehype-katex') || id.includes('node_modules/remark-math')) return 'math-vendor';
           if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router')) return 'react-vendor';
           if (id.includes('node_modules/dexie') || id.includes('node_modules/zustand')) return 'data-vendor';
         },

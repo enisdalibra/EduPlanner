@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+
 import { parseQuiz, type QuizQuestion } from "@/lib/quizParser";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Icon } from "@/components/ui/icon";
@@ -59,7 +59,9 @@ function OptionButton({ letter, text, isCorrect, isSelected, isRevealed, onClick
       aria-pressed={isSelected}
     >
       <span className={letterClass}>{letter}</span>
-      <span className="text-base sm:text-lg font-medium text-text dark:text-white leading-snug">{text}</span>
+      <span className="text-base sm:text-lg font-medium text-text dark:text-white leading-snug">
+        <MarkdownRenderer inline>{text}</MarkdownRenderer>
+      </span>
       {isRevealed && isCorrect && (
         <Icon name="check_circle" className="ml-auto text-success text-[24px] sm:text-[28px] flex-shrink-0" />
       )}
@@ -402,9 +404,9 @@ export function QuizView() {
           {/* Question text */}
           <div className="panel-lg !p-5 md:!p-7 rounded-2xl shadow-sm border border-gray-200/80 dark:border-gray-700/80">
             <div className="prose prose-lg md:prose-xl dark:prose-invert max-w-none [&_p]:font-bold [&_p]:text-xl md:[&_p]:text-2xl [&_p]:leading-relaxed [&_p]:text-text dark:[&_p]:text-white">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <MarkdownRenderer>
                 {question.questionMarkdown || question.heading}
-              </ReactMarkdown>
+              </MarkdownRenderer>
             </div>
           </div>
 

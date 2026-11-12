@@ -3,10 +3,10 @@ import { useParams, useNavigate } from "react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
 import { deleteNote } from "./api";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+
 import { preprocessMarkdown } from "@/lib/preprocessMarkdown";
-import { MarkdownImage } from "@/components/ui/MarkdownImage";
+
 import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { format } from "date-fns";
@@ -22,21 +22,6 @@ function useIsDark(): boolean {
   if (theme === "dark") return true;
   if (theme === "light") return false;
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
-}
-
-// ─── Shared markdown components ───────────────────────────────────────────────
-
-function makeMarkdownComponents(isDark: boolean) {
-  return {
-    p: ({ node, children, ...props }: any) => {
-      const onlyImage =
-        node?.children?.length === 1 &&
-        node.children[0].type === "element" &&
-        node.children[0].tagName === "img";
-      return onlyImage ? <>{children}</> : <p {...props}>{children}</p>;
-    },
-    img: ({ src, alt }: any) => <MarkdownImage src={src} alt={alt} isDark={isDark} />,
-  };
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -201,12 +186,12 @@ export function MaterialReadView() {
             "prose md:prose-lg dark:prose-invert max-w-none markdown-body flow-root",
             isDark && "prose-invert"
           )}>
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={makeMarkdownComponents(isDark)}
-            >
+            <MarkdownRenderer isDark={isDark}>
+
+
+
               {preprocessMarkdown(note.content || "")}
-            </ReactMarkdown>
+            </MarkdownRenderer>
           </div>
 
           {/* Bottom padding */}

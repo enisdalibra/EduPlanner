@@ -3,8 +3,8 @@ import { useNavigate } from "react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
 import { createNote, deleteNote, updateNote } from "./api";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+
 import { hasQuizContent, countQuizQuestions } from "@/lib/quizParser";
 
 import { Button } from "@/components/ui/button";
@@ -281,7 +281,7 @@ export function EvaluationsView() {
                   <div className="flex-1 p-8 bg-white dark:bg-gray-800 overflow-y-auto">
                     <div className="prose prose-sm dark:prose-invert md:prose-base max-w-none markdown-body">
                       {newContent ? (
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{newContent}</ReactMarkdown>
+                        <MarkdownRenderer>{newContent}</MarkdownRenderer>
                       ) : (
                         <span className="text-gray-400 italic">{t('notesPage.previewEmpty')}</span>
                       )}
@@ -328,9 +328,9 @@ export function EvaluationsView() {
             </DialogHeader>
             <div className="flex-1 overflow-y-auto px-8 py-8 bg-white dark:bg-gray-800">
               <div className="prose prose-slate dark:prose-invert md:prose-base max-w-none markdown-body">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <MarkdownRenderer>
                   {viewingNote?.content || ""}
-                </ReactMarkdown>
+                </MarkdownRenderer>
               </div>
             </div>
             <DialogFooter className="px-8 py-4 border-t bg-gray-50 dark:bg-gray-900 flex justify-between items-center sm:justify-between m-0 -mx-0 -mb-0">
