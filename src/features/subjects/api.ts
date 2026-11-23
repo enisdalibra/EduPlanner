@@ -4,7 +4,7 @@ import { DomainNotFoundError } from '@/lib/domainErrors';
 import { assertStudentIdsExist } from '@/lib/domainRelations';
 
 export type SubjectUpdate = Partial<
-  Pick<Subject, 'name' | 'description' | 'assignedStudents'>
+  Pick<Subject, 'name' | 'description' | 'classIds' | 'assignedStudents'>
 >;
 
 export async function createSubject(name: string, description?: string) {
@@ -29,8 +29,13 @@ export async function updateSubject(id: string, updates: SubjectUpdate) {
   };
   validateSubject(normalized, true);
 
-  await db.transaction('rw', [db.subjects, db.students], async () => {
+  await db.transaction('rw', [db.subjects, db.classes, db.students], async () => {
     if (!(await db.subjects.get(id))) throw new DomainNotFoundError('Subject', id);
+    if (normalized.classIds) {
+      for (const classId of new Set(normalized.classIds)) {
+        if (!(await db.classes.get(classId))) throw new DomainNotFoundError('Class', classId);
+      }
+    }
     if (normalized.assignedStudents) {
       await assertStudentIdsExist(db, normalized.assignedStudents);
     }
@@ -84,7 +89,8 @@ export async function assignClassToSubject(subjectId: string, classId: string): 
     const assignedStudents = [
       ...new Set([...(subject.assignedStudents ?? []), ...classStudents.map((student) => student.id)]),
     ];
-    await db.subjects.update(subjectId, { assignedStudents });
+    const classIds = [...new Set([...(subject.classIds ?? []), classId])];
+    await db.subjects.update(subjectId, { classIds, assignedStudents });
     return assignedStudents;
   });
 }

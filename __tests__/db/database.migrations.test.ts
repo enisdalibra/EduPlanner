@@ -110,11 +110,62 @@ describe('EduPlannerDB migrations', () => {
     expect(current.grades.schema.indexes.map(({ name }) => name)).toContain('[classId+subjectId]');
     expect(current.notes.schema.indexes.map(({ name }) => name)).toContain('[classId+type]');
     expect(current.notes.schema.indexes.map(({ name }) => name)).toContain('classIds');
+    expect(current.subjects.schema.indexes.map(({ name }) => name)).toContain('classIds');
     expect(current.tasks.schema.indexes.map(({ name }) => name)).toContain('[classId+date]');
     expect(current.schedules.schema.indexes.map(({ name }) => name)).toEqual(
       expect.arrayContaining(['classId', 'recurrenceType', 'startDate']),
     );
 
+    current.close();
+  });
+
+  it('backfills subject.classIds from active student enrollments when upgrading from v9 to v10', async () => {
+    const databaseName = `migration-v9-${crypto.randomUUID()}`;
+    databaseNames.push(databaseName);
+    const v9 = new Dexie(databaseName);
+    v9.version(9).stores({
+      profile: 'id',
+      subjects: 'id, name',
+      academicPeriods: 'id, name, isActive, startDate, endDate',
+      classes: 'id, academicPeriodId, archivedAt, name',
+      students: 'id, name, nis',
+      classEnrollments: 'id, &[classId+studentId], classId, studentId, endedAt',
+      attendances: 'id, [classId+date], [classId+subjectId+date], studentId, subjectId, classId, date',
+      grades: 'id, [classId+evaluationName], [classId+subjectId+evaluationName], [classId+subjectId], studentId, subjectId, classId',
+      notes: 'id, classId, *classIds, subjectId, type, [classId+type]',
+      tasks: 'id, date, status, classId, subjectId, [classId+date]',
+      teachingSessions: 'id, classId, subjectId, date, [classId+subjectId]',
+      studentNotes: 'id, studentId',
+      schedules: 'id, classId, recurrenceType, startDate',
+    });
+    await v9.open();
+    await v9.transaction('rw', [v9.table('academicPeriods'), v9.table('classes'), v9.table('students'), v9.table('classEnrollments'), v9.table('subjects')], async () => {
+      await v9.table('academicPeriods').add({ id: 'p1', name: '2026/2027', startDate: '2026-07-01', endDate: '2027-06-30', isActive: true });
+      await v9.table('classes').bulkAdd([
+        { id: 'c1', name: 'Kelas XA', academicPeriodId: 'p1' },
+        { id: 'c2', name: 'Kelas XB', academicPeriodId: 'p1' },
+      ]);
+      await v9.table('students').bulkAdd([
+        { id: 's1', name: 'Siswa Contoh 01', nis: 'DEMO-0001' },
+        { id: 's2', name: 'Siswa Contoh 02', nis: 'DEMO-0002' },
+      ]);
+      await v9.table('classEnrollments').bulkAdd([
+        { id: 'e1', classId: 'c1', studentId: 's1', enrolledAt: '2026-07-01' },
+        { id: 'e2', classId: 'c2', studentId: 's2', enrolledAt: '2026-07-01', endedAt: '2026-08-01' },
+      ]);
+      await v9.table('subjects').add({
+        id: 'subj-1',
+        name: 'Informatika',
+        assignedStudents: ['s1', 's2'],
+      });
+    });
+    v9.close();
+
+    const current = new EduPlannerDB(databaseName);
+    await current.open();
+
+    const migrated = await current.subjects.get('subj-1');
+    expect(migrated?.classIds).toEqual(['c1']);
     current.close();
   });
 });

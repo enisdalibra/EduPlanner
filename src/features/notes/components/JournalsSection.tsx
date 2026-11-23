@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
+import { getSubjectsForClass } from "@/lib/subjectRelations";
 import { createNote, deleteNote, getNotes, getNotesByClass, updateNote } from "../api";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
 import { Button } from "@/components/ui/button";
@@ -56,26 +57,17 @@ export function JournalsSection({ classId, readOnly = false, embedded = false }:
   // Filter subjects that have at least one student from the selected class assigned to them
   const availableSubjects = useMemo(() => {
     if (activeClassId === "all" || !subjects || !enrollments) return subjects || [];
-
-    const classStudentIds = new Set(
-      enrollments
-        .filter((item) => item.classId === activeClassId && !item.endedAt)
-        .map(({ studentId }) => studentId)
-    );
-
-    return subjects.filter((subject) =>
-      (subject.assignedStudents || []).some((studentId) => classStudentIds.has(studentId))
-    );
+    return getSubjectsForClass(subjects, activeClassId, enrollments);
   }, [subjects, activeClassId, enrollments]);
 
   // Reset subject if not available for this class
   useEffect(() => {
-    if (activeClassId !== "all" && selectedSubjectId !== "none" && availableSubjects.length > 0) {
+    if (activeClassId !== "all" && selectedSubjectId !== "none" && subjects && enrollments) {
       if (!availableSubjects.some((s) => s.id === selectedSubjectId)) {
         setSelectedSubjectId("none");
       }
     }
-  }, [activeClassId, availableSubjects, selectedSubjectId]);
+  }, [activeClassId, availableSubjects, selectedSubjectId, subjects, enrollments]);
 
   // View Dialog
   const [isViewOpen, setIsViewOpen] = useState(false);

@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 
-export const CURRENT_DATABASE_VERSION = 9;
+export const CURRENT_DATABASE_VERSION = 10;
 export const DEFAULT_DATABASE_NAME = 'EduPlannerDB';
 
 export interface Profile {
@@ -16,6 +16,8 @@ export interface Subject {
   id: string;
   name: string;
   description?: string;
+  /** Classes directly linked to this subject (many-to-many). */
+  classIds?: string[];
   assignedStudents?: string[]; // IDs of the students enrolled
 }
 
@@ -242,7 +244,7 @@ export class EduPlannerDB extends Dexie {
     });
 
     // Version 9: a teaching material can be shared with multiple classes.
-    this.version(CURRENT_DATABASE_VERSION).stores({
+    this.version(9).stores({
       notes: 'id, classId, *classIds, subjectId, type, [classId+type]',
     }).upgrade(async (transaction) => {
       await transaction.table('notes').toCollection().modify((note: Note) => {
@@ -253,6 +255,32 @@ export class EduPlannerDB extends Dexie {
         );
         delete note.classId;
         delete note.isTaught;
+      });
+    });
+
+    // Version 10: a subject can be directly assigned to multiple classes (many-to-many).
+    this.version(CURRENT_DATABASE_VERSION).stores({
+      subjects: 'id, name, *classIds',
+    }).upgrade(async (transaction) => {
+      const enrollments = await transaction.table('classEnrollments').toArray() as ClassEnrollment[];
+      const studentToClasses = new Map<string, string[]>();
+      for (const enrollment of enrollments) {
+        if (enrollment.endedAt) continue;
+        const list = studentToClasses.get(enrollment.studentId) ?? [];
+        list.push(enrollment.classId);
+        studentToClasses.set(enrollment.studentId, list);
+      }
+
+      await transaction.table('subjects').toCollection().modify((subject: Subject) => {
+        const inferredClassIds = new Set<string>(subject.classIds ?? []);
+        for (const studentId of subject.assignedStudents ?? []) {
+          for (const classId of studentToClasses.get(studentId) ?? []) {
+            inferredClassIds.add(classId);
+          }
+        }
+        if (inferredClassIds.size > 0) {
+          subject.classIds = [...inferredClassIds];
+        }
       });
     });
   }

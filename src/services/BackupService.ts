@@ -167,6 +167,13 @@ function assertRecordSchema(tableName: BackupTableName, record: BackupRecord, in
       );
     }
   }
+  if (tableName === "subjects" && hasOwn(record, "classIds")) {
+    if (!Array.isArray(record.classIds) || record.classIds.some((id) => typeof id !== "string")) {
+      throw new BackupValidationError(
+        `Backup table "subjects" record ${index + 1} has an invalid "classIds" field.`,
+      );
+    }
+  }
   if (tableName === "academicPeriods" && typeof record.isActive !== "boolean") {
     throw new BackupValidationError(
       `Backup table "academicPeriods" record ${index + 1} has an invalid "isActive" field.`,
@@ -262,6 +269,9 @@ function normalizeRecords(tableName: BackupTableName, value: unknown): BackupRec
         : record.isTaught === true && typeof record.classId === "string" ? [record.classId] : [];
       delete record.classId;
       delete record.isTaught;
+    }
+    if (tableName === "subjects" && Array.isArray(record.classIds)) {
+      record.classIds = [...new Set(record.classIds)];
     }
     assertRecordSchema(tableName, record, index);
     if (tableName === "notes" || tableName === "studentNotes") {

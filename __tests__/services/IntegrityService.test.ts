@@ -34,12 +34,14 @@ describe('checkDatabaseIntegrity', () => {
     ]);
     await database.classEnrollments.add({ id: 'orphan-enrollment', classId: 'missing-class', studentId: 'student-1', enrolledAt: '2026-07-01' });
     await database.attendances.add({ id: 'attendance-1', classId: 'class-1', studentId: 'student-1', date: '2026-07-19', status: 'hadir' });
+    await database.subjects.add({ id: 'subject-1', name: 'Informatika', classIds: ['missing-class'] });
 
     const report = await checkDatabaseIntegrity(database);
     expect(report.isHealthy).toBe(false);
     expect(report.issues).toEqual(expect.arrayContaining([
       expect.objectContaining({ kind: 'orphan', table: 'classes', field: 'academicPeriodId' }),
       expect.objectContaining({ kind: 'orphan', table: 'classEnrollments', field: 'classId' }),
+      expect.objectContaining({ kind: 'orphan', table: 'subjects', field: 'classIds', referencedId: 'missing-class' }),
       expect.objectContaining({ kind: 'duplicate', table: 'students', recordId: 'student-2' }),
       expect.objectContaining({ kind: 'mismatch', table: 'attendances', recordId: 'attendance-1' }),
     ]));

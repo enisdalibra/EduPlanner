@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { countQuizQuestions } from "@/lib/quizParser";
 import { INPUT_LIMITS } from "@/lib/validation";
+import { partitionSubjectsForClasses } from "@/lib/subjectRelations";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 
@@ -45,7 +46,7 @@ export function MaterialEditView() {
     () => (isNew ? Promise.resolve(undefined) : db.notes.get(id!)),
     [id, isNew]
   );
-  const classes = useLiveQuery(() => db.classes.filter((cls) => !cls.archivedAt).toArray());
+  const allClasses = useLiveQuery(() => db.classes.toArray());
   const subjects = useLiveQuery(() => db.subjects.toArray());
   const enrollments = useLiveQuery(() => db.classEnrollments.toArray());
 
@@ -92,26 +93,14 @@ export function MaterialEditView() {
 
   // ── Available subjects for selected class ───────────────────────────────────
   const availableSubjects = useMemo(() => {
-    if (classIds.length === 0 || !subjects || !enrollments) return subjects || [];
-    const classStudentIds = new Set(
-      enrollments.filter((item) => classIds.includes(item.classId) && !item.endedAt).map(({ studentId }) => studentId)
-    );
-    return subjects.filter((subj) =>
-      (subj.assignedStudents || []).some((sid) => classStudentIds.has(sid))
-    );
+    const { shared, other } = partitionSubjectsForClasses(subjects || [], classIds, enrollments || []);
+    return [...shared, ...other];
   }, [subjects, classIds, enrollments]);
 
-  // Reset subject if no longer available
-  useEffect(() => {
-    if (
-      classIds.length > 0 &&
-      subjectId !== "none" &&
-      availableSubjects.length > 0 &&
-      !availableSubjects.some((s) => s.id === subjectId)
-    ) {
-      setSubjectId("none");
-    }
-  }, [classIds, availableSubjects, subjectId]);
+  const classes = useMemo(() => {
+    if (!allClasses) return undefined;
+    return allClasses.filter((cls) => !cls.archivedAt || classIds.includes(cls.id));
+  }, [allClasses, classIds]);
 
   // ── Save ─────────────────────────────────────────────────────────────────────
   const handleSave = useCallback(async () => {

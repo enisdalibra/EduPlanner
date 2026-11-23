@@ -6,6 +6,7 @@ import { id as localeId, enUS as localeEn } from "date-fns/locale";
 import { toast } from "sonner";
 
 import { db, type TeachingSession } from "@/db/database";
+import { getSubjectsForClass } from "@/lib/subjectRelations";
 import { getClasses } from "@/features/classes/api";
 import { recordTeachingSession, deleteTeachingSession } from "./api";
 import { calculateTeachingStats } from "@/features/dashboard/hooks/useDashboardStats";
@@ -137,16 +138,7 @@ export function TeachingLogsView() {
   // Available subjects for the selected class in manual dialog
   const availableSubjectsForForm = useMemo(() => {
     if (!formClassId || formClassId === "none") return subjects;
-
-    const classStudentIds = new Set(
-      enrollments
-        .filter((item) => item.classId === formClassId && !item.endedAt)
-        .map(({ studentId }) => studentId)
-    );
-
-    return subjects.filter((subject) =>
-      (subject.assignedStudents || []).some((id) => classStudentIds.has(id))
-    );
+    return getSubjectsForClass(subjects, formClassId, enrollments);
   }, [subjects, formClassId, enrollments]);
 
   // Available materials for the selected class and subject in manual dialog

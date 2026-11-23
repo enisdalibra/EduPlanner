@@ -181,6 +181,19 @@ export function validateSubject(subject: Partial<Subject>, isUpdate = false) {
       throw new ValidationError('Subject assignments must not contain duplicate student IDs');
     }
   }
+  if (subject.classIds !== undefined) {
+    if (
+      !Array.isArray(subject.classIds) ||
+      subject.classIds.some(
+        (classId) => typeof classId !== 'string' || classId.trim() === '',
+      )
+    ) {
+      throw new ValidationError('Subject classIds must contain non-empty class IDs');
+    }
+    if (new Set(subject.classIds).size !== subject.classIds.length) {
+      throw new ValidationError('Subject classIds must not contain duplicate class IDs');
+    }
+  }
 }
 
 export function validateNote(note: Partial<Note>, isUpdate = false) {

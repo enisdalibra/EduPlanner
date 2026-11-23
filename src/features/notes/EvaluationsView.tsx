@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
+import { getSubjectsForClass } from "@/lib/subjectRelations";
 import { createNote, deleteNote, updateNote } from "./api";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
 
@@ -76,10 +77,7 @@ export function EvaluationsView() {
   // Filter subjects that have at least one student from the selected class assigned to them
   const availableSubjects = useMemo(() => {
     if (selectedClassId === "all" || !subjects || !enrollments) return subjects || [];
-    const classStudentIds = new Set(enrollments.filter((item) => item.classId === selectedClassId && !item.endedAt).map(({ studentId }) => studentId));
-    return subjects.filter(subject => {
-      return (subject.assignedStudents || []).some(id => classStudentIds.has(id));
-    });
+    return getSubjectsForClass(subjects, selectedClassId, enrollments);
   }, [subjects, selectedClassId, enrollments]);
 
   // Reset subject if not available for this class

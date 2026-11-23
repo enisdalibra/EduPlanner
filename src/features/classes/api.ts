@@ -161,7 +161,7 @@ export async function promoteStudents(input: {
 export async function deleteClass(id: string) {
   await db.transaction(
     'rw',
-    [db.classes, db.classEnrollments, db.attendances, db.grades, db.notes, db.tasks, db.teachingSessions, db.schedules],
+    [db.classes, db.classEnrollments, db.attendances, db.grades, db.notes, db.tasks, db.teachingSessions, db.schedules, db.subjects],
     async () => {
       if (!(await db.classes.get(id))) throw new DomainNotFoundError('Class', id);
       await db.attendances.where('classId').equals(id).delete();
@@ -171,6 +171,9 @@ export async function deleteClass(id: string) {
         note.taughtClassIds = note.taughtClassIds?.filter((classId) => classId !== id);
       });
       await db.notes.where('classId').equals(id).delete();
+      await db.subjects.where('classIds').equals(id).modify((subject) => {
+        subject.classIds = subject.classIds?.filter((classId) => classId !== id);
+      });
       await db.tasks.where('classId').equals(id).delete();
       await db.teachingSessions.where('classId').equals(id).delete();
       await db.schedules.where('classId').equals(id).delete();

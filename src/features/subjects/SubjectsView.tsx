@@ -61,7 +61,11 @@ export function SubjectsView() {
     
     try {
       const updatedAssigned = await assignClassToSubject(selectedSubject.id, selectedClassId);
-      setSelectedSubject({ ...selectedSubject, assignedStudents: updatedAssigned });
+      setSelectedSubject({
+        ...selectedSubject,
+        classIds: [...new Set([...(selectedSubject.classIds ?? []), selectedClassId])],
+        assignedStudents: updatedAssigned,
+      });
       setSelectedClassId("");
       toast.success(t('subjectsPage.successAssign') || 'Seluruh siswa kelas berhasil ditambahkan');
     } catch (e) {

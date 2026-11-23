@@ -36,7 +36,10 @@ export function GradebookView() {
     const classStudentIds = new Set(students.map(s => s.id));
     
     return subjects.filter(subject => {
-      return (subject.assignedStudents || []).some(id => classStudentIds.has(id));
+      return (
+        (subject.classIds || []).includes(selectedClassId) ||
+        (subject.assignedStudents || []).some(id => classStudentIds.has(id))
+      );
     });
   }, [subjects, selectedClassId, students]);
 

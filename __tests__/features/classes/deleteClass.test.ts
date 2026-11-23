@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => {
   return {
     classes: { get: vi.fn(), delete: vi.fn() },
     enrollments: makeTable(), attendances: makeTable(), grades: makeTable(), notes: makeTable(),
-    tasks: makeTable(), teachingSessions: makeTable(), schedules: makeTable(),
+    tasks: makeTable(), teachingSessions: makeTable(), schedules: makeTable(), subjects: makeTable(),
     transaction: vi.fn(),
   };
 });
@@ -24,6 +24,7 @@ vi.mock('@/db/database', () => ({ db: {
   tasks: mocks.tasks,
   teachingSessions: mocks.teachingSessions,
   schedules: mocks.schedules,
+  subjects: mocks.subjects,
   transaction: mocks.transaction,
 } }));
 
@@ -41,13 +42,15 @@ describe('deleteClass', () => {
     await deleteClass('class-1');
     expect(mocks.notes.where).toHaveBeenCalledWith('classIds');
     expect(mocks.notes.modify).toHaveBeenCalled();
+    expect(mocks.subjects.where).toHaveBeenCalledWith('classIds');
+    expect(mocks.subjects.modify).toHaveBeenCalled();
     expect(mocks.enrollments.where).toHaveBeenCalledWith('classId');
     for (const table of [mocks.attendances, mocks.grades, mocks.notes, mocks.tasks, mocks.teachingSessions, mocks.schedules]) {
       expect(table.where).toHaveBeenCalledWith('classId');
       expect(table.delete).toHaveBeenCalled();
     }
     expect(mocks.classes.delete).toHaveBeenCalledWith('class-1');
-    expect(mocks.transaction).toHaveBeenCalledWith('rw', [db.classes, db.classEnrollments, db.attendances, db.grades, db.notes, db.tasks, db.teachingSessions, db.schedules], expect.any(Function));
+    expect(mocks.transaction).toHaveBeenCalledWith('rw', [db.classes, db.classEnrollments, db.attendances, db.grades, db.notes, db.tasks, db.teachingSessions, db.schedules, db.subjects], expect.any(Function));
   });
 
   it('does not delete the class when related cleanup fails', async () => {

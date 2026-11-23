@@ -446,4 +446,23 @@ describe("BackupService", () => {
       source: "current",
     });
   });
+
+  it("validates and deduplicates subjects.classIds during restore", async () => {
+    const invalid = currentBackup();
+    invalid.data.subjects = [{ id: "subj-1", name: "Informatika", classIds: [123] }];
+    await expect(BackupService.restoreExportPayload(invalid)).rejects.toThrow(/classIds/);
+
+    const valid = currentBackup();
+    valid.data.classes = [
+      { id: "c1", name: "Kelas XA", academicPeriodId: "period-1" },
+      { id: "c2", name: "Kelas XB", academicPeriodId: "period-1" },
+    ];
+    valid.data.subjects = [
+      { id: "subj-1", name: "Informatika", classIds: ["c1", "c2", "c1"] },
+    ];
+    await BackupService.restoreExportPayload(valid);
+    expect(mocks.tables.subjects.bulkAdd).toHaveBeenCalledWith([
+      expect.objectContaining({ id: "subj-1", classIds: ["c1", "c2"] }),
+    ]);
+  });
 });

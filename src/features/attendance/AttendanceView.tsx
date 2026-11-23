@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import type { Locale } from "date-fns";
 import { id as localeId, enUS as localeEn } from "date-fns/locale";
 import { db } from "@/db/database";
+import { getSubjectsForClass } from "@/lib/subjectRelations";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from "recharts";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -63,14 +64,7 @@ export function AttendanceView() {
   // Filter subjects that have at least one student from the selected class assigned to them
   const availableSubjects = useMemo(() => {
     if (!selectedClassId || !subjects || !enrollments) return [];
-    
-    // IDs of students in the currently selected class
-    const classStudentIds = new Set(enrollments.filter((item) => item.classId === selectedClassId && !item.endedAt).map(({ studentId }) => studentId));
-    
-    return subjects.filter(subject => {
-      // Check if any student assigned to this subject is in the selected class
-      return (subject.assignedStudents || []).some(id => classStudentIds.has(id));
-    });
+    return getSubjectsForClass(subjects, selectedClassId, enrollments);
   }, [subjects, selectedClassId, enrollments]);
 
   const onSubjectUnavailable = useCallback(() => setSelectedSubjectId('none'), []);

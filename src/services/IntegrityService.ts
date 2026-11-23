@@ -133,7 +133,7 @@ function checkStudentDuplicates(students: Student[], issues: IntegrityIssue[]): 
   }
 }
 
-function checkSubjectAssignments(subjects: Subject[], studentIds: Set<string>, issues: IntegrityIssue[]): void {
+function checkSubjectAssignments(subjects: Subject[], studentIds: Set<string>, classIds: Set<string>, issues: IntegrityIssue[]): void {
   for (const subject of subjects) {
     const seenAssignments = new Set<string>();
     for (const studentId of subject.assignedStudents ?? []) {
@@ -159,6 +159,33 @@ function checkSubjectAssignments(subjects: Subject[], studentIds: Set<string>, i
       }
       seenAssignments.add(studentId);
     }
+
+    const seenClasses = new Set<string>();
+    for (const classId of subject.classIds ?? []) {
+      addOrphan(
+        issues,
+        'subjects',
+        subject.id,
+        'classIds',
+        classId,
+        'classes',
+        classIds,
+      );
+      if (seenClasses.has(classId)) {
+        issues.push({
+          kind: 'duplicate',
+          table: 'subjects',
+          recordId: subject.id,
+          field: 'classIds',
+          referencedId: classId,
+          duplicateOf: subject.id,
+          message: `subjects record "${subject.id}" assigns class "${classId}" more than once.`,
+        });
+      }
+      seenClasses.add(classId);
+    }
+
+
   }
 }
 
@@ -204,7 +231,7 @@ export function checkIntegritySnapshot(snapshot: IntegritySnapshot): IntegrityRe
     addDuplicate(issues, 'classEnrollments', enrollment.id, 'classId+studentId', compositeKey([enrollment.classId, enrollment.studentId]), enrollmentPairs);
   }
   checkStudentDuplicates(snapshot.students, issues);
-  checkSubjectAssignments(snapshot.subjects, studentIds, issues);
+  checkSubjectAssignments(snapshot.subjects, studentIds, classIds, issues);
 
   const attendanceKeys = new Map<string, string>();
   for (const attendance of snapshot.attendances) {

@@ -82,7 +82,26 @@ describe('Subjects API', () => {
 
     await expect(assignClassToSubject('subject-1', 'c1')).resolves.toEqual(['s1', 's2']);
     expect(db.subjects.update).toHaveBeenCalledWith('subject-1', {
+      classIds: ['c1'],
       assignedStudents: ['s1', 's2'],
+    });
+  });
+
+  it('links an empty class to a subject via classIds without requiring students', async () => {
+    vi.mocked(db.subjects.get).mockResolvedValueOnce({
+      id: 'subject-1',
+      name: 'Informatika',
+      classIds: ['c1'],
+      assignedStudents: [],
+    });
+    vi.mocked(db.classes.get).mockResolvedValueOnce({ id: 'c2', name: 'Kelas XA', academicPeriodId: 'period-1' });
+    vi.mocked(db.classEnrollments.toArray).mockResolvedValue([]);
+    vi.mocked(db.students.bulkGet).mockResolvedValue([]);
+
+    await expect(assignClassToSubject('subject-1', 'c2')).resolves.toEqual([]);
+    expect(db.subjects.update).toHaveBeenCalledWith('subject-1', {
+      classIds: ['c1', 'c2'],
+      assignedStudents: [],
     });
   });
 });
