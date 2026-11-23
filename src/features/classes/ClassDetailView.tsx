@@ -445,7 +445,7 @@ export function ClassDetailView() {
                   const subjName = material.subjectId ? subjects?.find(s => s.id === material.subjectId)?.name : null;
                   const materialSessions = teachingSessions?.filter(s => s.noteId === material.id) || [];
                   const materialMins = materialSessions.reduce((sum, s) => sum + s.durationMinutes, 0);
-                  const isCurrentTimer = activeTimer?.noteId === material.id;
+                  const isCurrentTimer = activeTimer?.classId === id && activeTimer?.noteId === material.id;
 
                   return (
                     <li key={material.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors">
