@@ -45,3 +45,4 @@ recordings-local/
 # Only explicitly synthetic fixture directories may contain ignored data formats.
 !__tests__/fixtures/synthetic/**/*.json
 !docs/examples/synthetic/**/*.csv
+.attachments/
