@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db/database';
 import { ClassDetailView } from '@/features/classes/ClassDetailView';
+import { getSubjectsForClass } from '@/lib/subjectRelations';
 import { deleteTestDatabase, resetTestDatabase } from '../../integration/testDatabase';
 
 vi.mock('sonner', () => ({
@@ -41,9 +42,9 @@ describe('ClassDetailView attendance tab', () => {
       },
     ]);
     await db.students.bulkAdd([
-      { id: 'student-a', name: 'Budi XIA', nis: '101' },
-      { id: 'student-b', name: 'Siti XIB', nis: '201' },
-      { id: 'student-archived', name: 'Andi Lama', nis: '301' },
+      { id: 'student-a', name: 'Siswa Contoh A', nis: 'DEMO-001' },
+      { id: 'student-b', name: 'Siswa Contoh B', nis: 'DEMO-002' },
+      { id: 'student-archived', name: 'Siswa Arsip 01', nis: 'DEMO-003' },
     ]);
     await db.classEnrollments.bulkAdd([
       { id: 'enr-a', classId: 'class-a', studentId: 'student-a', enrolledAt: '2026-07-01' },
@@ -56,6 +57,11 @@ describe('ClassDetailView attendance tab', () => {
         endedAt: '2026-06-30',
       },
     ]);
+    await db.subjects.add({
+      id: 'subj-archived',
+      name: 'Mapel Arsip',
+      assignedStudents: ['student-archived'],
+    });
     await db.attendances.bulkAdd([
       { id: 'att-a-1', classId: 'class-a', studentId: 'student-a', date: '2026-11-20', status: 'sakit' },
       { id: 'att-b-1', classId: 'class-b', studentId: 'student-b', date: '2026-11-21', status: 'alpa' },
@@ -81,10 +87,10 @@ describe('ClassDetailView attendance tab', () => {
     fireEvent.click(attendanceTab);
 
     await waitFor(() => {
-      expect(screen.getByText('Budi XIA')).toBeInTheDocument();
+      expect(screen.getByText('Siswa Contoh A')).toBeInTheDocument();
     });
 
-    expect(screen.queryByText('Siti XIB')).not.toBeInTheDocument();
+    expect(screen.queryByText('Siswa Contoh B')).not.toBeInTheDocument();
     expect(screen.queryByText(/pilih kelas/i)).not.toBeInTheDocument();
 
     const recapTab = screen.getByRole('tab', { name: /rekap/i });
@@ -94,7 +100,7 @@ describe('ClassDetailView attendance tab', () => {
       expect(screen.getByText('S: 1')).toBeInTheDocument();
     });
 
-    expect(screen.queryByText('Siti XIB')).not.toBeInTheDocument();
+    expect(screen.queryByText('Siswa Contoh B')).not.toBeInTheDocument();
     expect(screen.getByText(/1 hari/i)).toBeInTheDocument();
   });
 
@@ -105,7 +111,7 @@ describe('ClassDetailView attendance tab', () => {
     fireEvent.click(attendanceTab);
 
     await waitFor(() => {
-      expect(screen.getByText('Budi XIA')).toBeInTheDocument();
+      expect(screen.getByText('Siswa Contoh A')).toBeInTheDocument();
     });
 
     const saveButton = await screen.findByRole('button', { name: /simpan presensi/i });
@@ -123,20 +129,23 @@ describe('ClassDetailView attendance tab', () => {
       });
     });
 
-    // Ensure class-b attendance for today remains untouched
     const otherClassToday = await db.attendances.where('[classId+date]').equals(['class-b', today]).toArray();
     expect(otherClassToday).toHaveLength(1);
     expect(otherClassToday[0].studentId).toBe('student-b');
   });
 
-  it('renders archived class attendance in read-only mode', async () => {
+  it('renders archived class attendance in read-only mode and retains historical subjects', async () => {
+    const subjects = await db.subjects.toArray();
+    const enrollments = await db.classEnrollments.toArray();
+    expect(getSubjectsForClass(subjects, 'class-archived', enrollments, true).map((s) => s.id)).toContain('subj-archived');
+
     renderClassDetail('class-archived');
 
     const attendanceTab = await screen.findByRole('tab', { name: /absensi/i });
     fireEvent.click(attendanceTab);
 
     await waitFor(() => {
-      expect(screen.getByText('Andi Lama')).toBeInTheDocument();
+      expect(screen.getByText('Siswa Arsip 01')).toBeInTheDocument();
     });
 
     const saveButton = await screen.findByRole('button', { name: /simpan presensi/i });

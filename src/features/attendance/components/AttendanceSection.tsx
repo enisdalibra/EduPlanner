@@ -80,14 +80,15 @@ export function AttendanceSection({ classId, readOnly = false, embedded = false 
   // Filter subjects that have at least one student from the active class assigned to them
   const availableSubjects = useMemo(() => {
     if (!activeClassId || !subjects || !enrollments) return [];
-    return getSubjectsForClass(subjects, activeClassId, enrollments);
-  }, [subjects, activeClassId, enrollments]);
+    return getSubjectsForClass(subjects, activeClassId, enrollments, readOnly);
+  }, [subjects, activeClassId, enrollments, readOnly]);
 
   const onSubjectUnavailable = useCallback(() => setSelectedSubjectId("none"), []);
   const {
     drafts,
     students,
     isLoading,
+    loadError,
     setStatus: handleStatusChange,
     setAllStatus,
     save: handleSave,
@@ -132,9 +133,9 @@ export function AttendanceSection({ classId, readOnly = false, embedded = false 
         <div className={cn("grid grid-cols-1 gap-6 panel", classId ? "md:grid-cols-2" : "md:grid-cols-3")}>
           {!classId && (
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-text dark:text-gray-300">{t("attendancePage.selectClass")}</label>
+              <label htmlFor="attendance-class" className="block text-sm font-medium text-text dark:text-gray-300">{t("attendancePage.selectClass")}</label>
               <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger id="attendance-class" className="w-full">
                   <SelectValue placeholder={t("attendancePage.classPlaceholder")}>
                     {(value) => classes?.find((cls) => cls.id === value)?.name ?? t("attendancePage.classPlaceholder")}
                   </SelectValue>
@@ -150,9 +151,9 @@ export function AttendanceSection({ classId, readOnly = false, embedded = false 
           )}
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-text dark:text-gray-300">{t("attendancePage.subjectLabel")}</label>
+            <label htmlFor="attendance-subject" className="block text-sm font-medium text-text dark:text-gray-300">{t("attendancePage.subjectLabel")}</label>
             <Select value={selectedSubjectId} onValueChange={setSelectedSubjectId}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger id="attendance-subject" className="w-full">
                 <SelectValue placeholder={t("attendancePage.subjectPlaceholder")}>
                   {(value) =>
                     value === "none"
@@ -188,7 +189,14 @@ export function AttendanceSection({ classId, readOnly = false, embedded = false 
           </div>
         )}
 
-        {activeClassId && !isLoading && students.length === 0 && (
+        {activeClassId && !isLoading && loadError && (
+          <div role="alert" className="text-center p-12 panel border border-danger/20 bg-danger/5 text-danger">
+            <Icon name="error" className="text-[36px] mx-auto mb-3" />
+            <p className="font-medium">{t("attendancePage.errorLoad")}</p>
+          </div>
+        )}
+
+        {activeClassId && !isLoading && !loadError && students.length === 0 && (
           <div className="text-center p-20 panel bg-gray-50/50 dark:bg-gray-800/50 border-dashed">
             <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
               <Icon name="groups" className="text-[40px] text-gray-400" />
@@ -197,7 +205,7 @@ export function AttendanceSection({ classId, readOnly = false, embedded = false 
           </div>
         )}
 
-        {activeClassId && students.length > 0 && (
+        {activeClassId && !isLoading && !loadError && students.length > 0 && (
           <div className="space-y-6">
             {activeTab === "presensi" ? (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -323,7 +331,7 @@ export function AttendanceSection({ classId, readOnly = false, embedded = false 
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-16 text-center">No</TableHead>
+                        <TableHead className="w-16 text-center">{t("attendancePage.thNo")}</TableHead>
                         <TableHead className="min-w-[180px]">{t("attendancePage.thName")}</TableHead>
                         {uniqueDates.map((dStr) => (
                           <TableHead key={dStr} className="text-center min-w-[90px] font-mono text-[10px] uppercase tracking-wider text-gray-400">
@@ -460,17 +468,19 @@ function StatusButton({
   };
 
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
+      size="xs"
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "px-4 py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-full transition-all border active:scale-95 disabled:opacity-50 disabled:pointer-events-none",
+        "px-4 py-1.5 h-auto text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-full transition-all border active:scale-95",
         active ? activeMap[color] : colorMap[color]
       )}
     >
       {label}
-    </button>
+    </Button>
   );
 }
 

@@ -75,6 +75,7 @@ export function EvaluationsSection({ classId, readOnly = false, embedded = false
 
   // Edit/Create Dialog
   const [isOpen, setIsOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
@@ -135,7 +136,7 @@ export function EvaluationsSection({ classId, readOnly = false, embedded = false
   };
 
   const handleSave = async () => {
-    if (readOnly) return;
+    if (readOnly || isSaving) return;
     if (!newTitle.trim()) {
       toast.error(t("notesPage.errorEmptyTitle"));
       return;
@@ -143,6 +144,7 @@ export function EvaluationsSection({ classId, readOnly = false, embedded = false
     const cId = classId ?? (selectedClassId === "all" ? undefined : selectedClassId);
     const sId = selectedSubjectId === "none" ? undefined : selectedSubjectId;
 
+    setIsSaving(true);
     try {
       if (editingId) {
         await updateNote(editingId, { title: newTitle, content: newContent, classId: cId, subjectId: sId });
@@ -154,6 +156,8 @@ export function EvaluationsSection({ classId, readOnly = false, embedded = false
       setIsOpen(false);
     } catch {
       toast.error(t("notesPage.errorSave"));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -215,8 +219,9 @@ export function EvaluationsSection({ classId, readOnly = false, embedded = false
           </DialogHeader>
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
             <div className="space-y-2">
-              <Label>{t("notesPage.labelTitle")}</Label>
+              <Label htmlFor="evaluation-title">{t("notesPage.labelTitle")}</Label>
               <Input
+                id="evaluation-title"
                 value={newTitle}
                 maxLength={INPUT_LIMITS.title}
                 onChange={(e) => setNewTitle(e.target.value)}
@@ -226,12 +231,12 @@ export function EvaluationsSection({ classId, readOnly = false, embedded = false
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>{t("notesPage.labelClass")}</Label>
+                <Label htmlFor="evaluation-class">{t("notesPage.labelClass")}</Label>
                 {classId ? (
-                  <Input value={scopedClass?.name || ""} disabled />
+                  <Input id="evaluation-class" value={scopedClass?.name || ""} disabled />
                 ) : (
                   <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger id="evaluation-class" className="w-full">
                       <SelectValue placeholder={t("notesPage.placeholderClass")}>
                         {selectedClassId === "all"
                           ? t("notesPage.allClasses")
@@ -251,9 +256,9 @@ export function EvaluationsSection({ classId, readOnly = false, embedded = false
               </div>
 
               <div className="space-y-2">
-                <Label>{t("notesPage.labelSubject")}</Label>
+                <Label htmlFor="evaluation-subject">{t("notesPage.labelSubject")}</Label>
                 <Select value={selectedSubjectId} onValueChange={setSelectedSubjectId}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger id="evaluation-subject" className="w-full">
                     <SelectValue placeholder={t("notesPage.placeholderSubject")}>
                       {selectedSubjectId === "none"
                         ? t("notesPage.noSubject")
@@ -347,10 +352,12 @@ export function EvaluationsSection({ classId, readOnly = false, embedded = false
             </div>
           </div>
           <DialogFooter className="px-6 py-4 border-t bg-gray-50 dark:bg-gray-900 m-0 -mx-0 -mb-0">
-            <Button variant="ghost" onClick={() => setIsOpen(false)}>
+            <Button variant="ghost" disabled={isSaving} onClick={() => setIsOpen(false)}>
               {t("notesPage.btnCancel")}
             </Button>
-            <Button onClick={handleSave}>{t("notesPage.btnSave")}</Button>
+            <Button disabled={isSaving} onClick={handleSave}>
+              {isSaving ? t("common.loading") : t("notesPage.btnSave")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -541,6 +548,7 @@ export function EvaluationsSection({ classId, readOnly = false, embedded = false
                           <Button
                             variant="ghost"
                             size="icon-xs"
+                            aria-label={t("notesPage.tooltipEdit")}
                             className="text-gray-400 group-hover:text-primary"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -554,6 +562,7 @@ export function EvaluationsSection({ classId, readOnly = false, embedded = false
                           <Button
                             variant="ghost"
                             size="icon-xs"
+                            aria-label={t("notesPage.tooltipDelete")}
                             className="text-gray-400 hover:text-danger"
                             onClick={(e) => {
                               e.stopPropagation();
