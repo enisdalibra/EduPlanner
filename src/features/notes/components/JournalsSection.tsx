@@ -24,13 +24,20 @@ import { INPUT_LIMITS } from "@/lib/validation";
 interface JournalsSectionProps {
   /** When set, scopes displayed journals and new/edited journals strictly to this class. */
   classId?: string;
+  /** Optional display name of the scoped class so the dialog can prefill immediately without waiting on IndexedDB. */
+  scopedClassName?: string;
   /** When true, disables creating, editing, and deleting journals (e.g. archived class). */
   readOnly?: boolean;
   /** When true, renders a compact tab-friendly layout instead of a full page header. */
   embedded?: boolean;
 }
 
-export function JournalsSection({ classId, readOnly = false, embedded = false }: JournalsSectionProps) {
+export function JournalsSection({
+  classId,
+  scopedClassName,
+  readOnly = false,
+  embedded = false,
+}: JournalsSectionProps) {
   const notes = useLiveQuery(
     () => (classId ? getNotesByClass(classId, "guru") : getNotes("guru")),
     [classId]
@@ -137,9 +144,11 @@ export function JournalsSection({ classId, readOnly = false, embedded = false }:
     }
   };
 
+  const resolvedScopedClassName = scopedClassName ?? scopedClass?.name ?? "";
+
   const resolveClassName = (noteClassId?: string) => {
     if (!noteClassId) return null;
-    if (classId && noteClassId === classId && scopedClass) return scopedClass.name;
+    if (classId && noteClassId === classId && resolvedScopedClassName) return resolvedScopedClassName;
     return classes?.find((c) => c.id === noteClassId)?.name ?? null;
   };
 
@@ -193,7 +202,7 @@ export function JournalsSection({ classId, readOnly = false, embedded = false }:
               <div className="space-y-2">
                 <Label>{t("notesPage.labelClass")}</Label>
                 {classId ? (
-                  <Input value={scopedClass?.name || ""} disabled />
+                  <Input value={resolvedScopedClassName} disabled />
                 ) : (
                   <Select value={selectedClassId} onValueChange={setSelectedClassId}>
                     <SelectTrigger className="w-full">

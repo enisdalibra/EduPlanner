@@ -648,10 +648,10 @@ export function ClassDetailView() {
           <AttendanceSection key={id} classId={id!} readOnly={Boolean(cls.archivedAt)} embedded />
         </TabsContent>
         <TabsContent value="journals" className="space-y-6">
-          <JournalsSection key={id} classId={id!} readOnly={Boolean(cls.archivedAt)} embedded />
+          <JournalsSection key={id} classId={id!} scopedClassName={cls.name} readOnly={Boolean(cls.archivedAt)} embedded />
         </TabsContent>
         <TabsContent value="evaluations" className="space-y-6">
-          <EvaluationsSection key={id} classId={id!} readOnly={Boolean(cls.archivedAt)} embedded />
+          <EvaluationsSection key={id} classId={id!} scopedClassName={cls.name} readOnly={Boolean(cls.archivedAt)} embedded />
         </TabsContent>
       </Tabs>
 

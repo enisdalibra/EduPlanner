@@ -102,7 +102,7 @@ describe('ClassDetailView teacher journals tab', () => {
 
     const titleInput = await screen.findByPlaceholderText(/jurnal kelas xii/i);
     const contentInput = screen.getByPlaceholderText(/tulis catatan jurnal/i);
-    const classInput = screen.getByDisplayValue('Kelas XIB');
+    const classInput = await screen.findByDisplayValue('Kelas XIB');
 
     expect(classInput).toBeDisabled();
 

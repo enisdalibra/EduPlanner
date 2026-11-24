@@ -53,13 +53,20 @@ Pertanyaan dengan 5 pilihan?
 interface EvaluationsSectionProps {
   /** When set, scopes displayed evaluations and new/edited evaluations strictly to this class. */
   classId?: string;
+  /** Optional display name of the scoped class so the dialog can prefill immediately without waiting on IndexedDB. */
+  scopedClassName?: string;
   /** When true, disables creating, editing, and deleting evaluations (e.g. archived class). */
   readOnly?: boolean;
   /** When true, renders a compact tab-friendly layout instead of a full page header. */
   embedded?: boolean;
 }
 
-export function EvaluationsSection({ classId, readOnly = false, embedded = false }: EvaluationsSectionProps) {
+export function EvaluationsSection({
+  classId,
+  scopedClassName,
+  readOnly = false,
+  embedded = false,
+}: EvaluationsSectionProps) {
   const navigate = useNavigate();
   const notes = useLiveQuery(
     () => (classId ? getNotesByClass(classId, "evaluasi") : getNotes("evaluasi")),
@@ -175,9 +182,11 @@ export function EvaluationsSection({ classId, readOnly = false, embedded = false
     setEditorMode("write");
   };
 
+  const resolvedScopedClassName = scopedClassName ?? scopedClass?.name ?? "";
+
   const resolveClassName = (noteClassId?: string) => {
     if (!noteClassId) return null;
-    if (classId && noteClassId === classId && scopedClass) return scopedClass.name;
+    if (classId && noteClassId === classId && resolvedScopedClassName) return resolvedScopedClassName;
     return classes?.find((c) => c.id === noteClassId)?.name ?? null;
   };
 
@@ -233,7 +242,7 @@ export function EvaluationsSection({ classId, readOnly = false, embedded = false
               <div className="space-y-2">
                 <Label htmlFor="evaluation-class">{t("notesPage.labelClass")}</Label>
                 {classId ? (
-                  <Input id="evaluation-class" value={scopedClass?.name || ""} disabled />
+                  <Input id="evaluation-class" value={resolvedScopedClassName} disabled />
                 ) : (
                   <Select value={selectedClassId} onValueChange={setSelectedClassId}>
                     <SelectTrigger id="evaluation-class" className="w-full">

@@ -109,7 +109,7 @@ describe('ClassDetailView evaluations tab', () => {
 
     const titleInput = await screen.findByPlaceholderText(/soal uts matematika/i);
     const contentInput = screen.getByPlaceholderText(/tulis butir soal evaluasi/i);
-    const classInput = screen.getByDisplayValue('Kelas XIA');
+    const classInput = await screen.findByDisplayValue('Kelas XIA');
 
     expect(classInput).toBeDisabled();
 
