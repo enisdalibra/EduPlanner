@@ -14,6 +14,8 @@ interface AttendanceEditorOptions {
   date: string;
   availableSubjects: Subject[];
   onSubjectUnavailable: () => void;
+  includeHistorical?: boolean;
+  readOnly?: boolean;
 }
 
 export function useAttendanceEditor({
@@ -22,6 +24,8 @@ export function useAttendanceEditor({
   date,
   availableSubjects,
   onSubjectUnavailable,
+  includeHistorical = false,
+  readOnly = false,
 }: AttendanceEditorOptions) {
   const { t } = useTranslation();
   const [drafts, setDrafts] = useState<Record<string, AttendanceDraft>>({});
@@ -34,7 +38,7 @@ export function useAttendanceEditor({
       if (!classId) return;
       setIsLoading(true);
       try {
-        const classStudents = await getStudentsByClass(classId);
+        const classStudents = await getStudentsByClass(classId, includeHistorical);
         if (subjectId !== 'none' && !availableSubjects.some((subject) => subject.id === subjectId)) {
           onSubjectUnavailable();
         }
@@ -62,9 +66,10 @@ export function useAttendanceEditor({
     }
     void loadData();
     return () => { active = false; };
-  }, [classId, subjectId, date, availableSubjects, onSubjectUnavailable]);
+  }, [classId, subjectId, date, availableSubjects, onSubjectUnavailable, includeHistorical]);
 
   const setStatus = (studentId: string, status: AttendanceStatus) => {
+    if (readOnly) return;
     setDrafts((current) => ({
       ...current,
       [studentId]: { ...current[studentId], status },
@@ -72,13 +77,14 @@ export function useAttendanceEditor({
   };
 
   const setAllStatus = (status: AttendanceStatus) => {
+    if (readOnly) return;
     setDrafts((current) => Object.fromEntries(
       Object.entries(current).map(([studentId, draft]) => [studentId, { ...draft, status }]),
     ));
   };
 
   const save = async () => {
-    if (!classId) return;
+    if (!classId || readOnly) return;
     setIsLoading(true);
     try {
       const selectedSubject = subjectId !== 'none' ? subjectId : undefined;

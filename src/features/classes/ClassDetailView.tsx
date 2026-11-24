@@ -8,6 +8,7 @@ import { completeTeachingTimer } from "@/features/teaching/timer";
 import { updateNote } from "@/features/notes/api";
 import { JournalsSection } from "@/features/notes/components/JournalsSection";
 import { EvaluationsSection } from "@/features/notes/components/EvaluationsSection";
+import { AttendanceSection } from "@/features/attendance/components/AttendanceSection";
 import { ScheduleEditorDialog } from "./components/ScheduleEditorDialog";
 import { useScheduleEditor } from "./hooks/useScheduleEditor";
 import { Button } from "@/components/ui/button";
@@ -177,7 +178,7 @@ export function ClassDetailView() {
       </div>
 
       <Tabs defaultValue="materials" className="w-full">
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 max-w-full overflow-x-auto">
           <TabsTrigger value="materials">
             <Icon name="menu_book" className="w-4 h-4" /> {t('classDetail.tabMaterials')}
           </TabsTrigger>
@@ -186,6 +187,9 @@ export function ClassDetailView() {
           </TabsTrigger>
           <TabsTrigger value="students">
             <Icon name="person" className="w-4 h-4" /> {t('classDetail.tabStudents')}
+          </TabsTrigger>
+          <TabsTrigger value="attendance">
+            <Icon name="check_box" className="w-4 h-4" /> {t('classDetail.tabAttendance')}
           </TabsTrigger>
           <TabsTrigger value="timelog">
             <Icon name="schedule" className="w-4 h-4" /> {t('classDetail.tabLog')}
@@ -639,6 +643,9 @@ export function ClassDetailView() {
               </div>
             )}
           </div>
+        </TabsContent>
+        <TabsContent value="attendance" className="space-y-6">
+          <AttendanceSection classId={id!} readOnly={Boolean(cls.archivedAt)} embedded />
         </TabsContent>
         <TabsContent value="journals" className="space-y-6">
           <JournalsSection classId={id!} readOnly={Boolean(cls.archivedAt)} embedded />
