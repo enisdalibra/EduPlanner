@@ -7,6 +7,7 @@ import { endEnrollment, getStudentsByClass } from "./api";
 import { completeTeachingTimer } from "@/features/teaching/timer";
 import { updateNote } from "@/features/notes/api";
 import { JournalsSection } from "@/features/notes/components/JournalsSection";
+import { EvaluationsSection } from "@/features/notes/components/EvaluationsSection";
 import { ScheduleEditorDialog } from "./components/ScheduleEditorDialog";
 import { useScheduleEditor } from "./hooks/useScheduleEditor";
 import { Button } from "@/components/ui/button";
@@ -191,6 +192,9 @@ export function ClassDetailView() {
           </TabsTrigger>
           <TabsTrigger value="journals">
             <Icon name="edit_note" className="w-4 h-4" /> {t('classDetail.tabJournals')}
+          </TabsTrigger>
+          <TabsTrigger value="evaluations">
+            <Icon name="analytics" className="w-4 h-4" /> {t('classDetail.tabEvaluations')}
           </TabsTrigger>
         </TabsList>
 
@@ -638,6 +642,9 @@ export function ClassDetailView() {
         </TabsContent>
         <TabsContent value="journals" className="space-y-6">
           <JournalsSection classId={id!} readOnly={Boolean(cls.archivedAt)} embedded />
+        </TabsContent>
+        <TabsContent value="evaluations" className="space-y-6">
+          <EvaluationsSection classId={id!} readOnly={Boolean(cls.archivedAt)} embedded />
         </TabsContent>
       </Tabs>
 
