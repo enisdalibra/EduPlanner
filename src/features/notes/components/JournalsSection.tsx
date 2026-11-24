@@ -282,7 +282,7 @@ export function JournalsSection({
                 />
               ) : (
                 <div className="flex-1 p-8 bg-white dark:bg-gray-800 overflow-y-auto">
-                  <div className="prose prose-sm dark:prose-invert md:prose-base max-w-none markdown-body">
+                  <div className="prose prose-sm dark:prose-invert md:prose-base max-w-none markdown-body flow-root">
                     {newContent ? (
                       <MarkdownRenderer>{newContent}</MarkdownRenderer>
                     ) : (
@@ -328,7 +328,7 @@ export function JournalsSection({
             )}
           </DialogHeader>
           <div className="flex-1 overflow-y-auto px-8 py-8 bg-white dark:bg-gray-800">
-            <div className="prose prose-slate dark:prose-invert md:prose-base max-w-none markdown-body">
+            <div className="prose prose-slate dark:prose-invert md:prose-base max-w-none markdown-body flow-root">
               <MarkdownRenderer>{viewingNote?.content || ""}</MarkdownRenderer>
             </div>
           </div>

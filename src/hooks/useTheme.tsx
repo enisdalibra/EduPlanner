@@ -93,3 +93,16 @@ export const useTheme = () => {
 
   return context;
 };
+
+/**
+ * Resolves the effective dark-mode state from the active ThemeProvider preference.
+ */
+export function useIsDark(): boolean {
+  const { theme } = useTheme();
+  if (theme === "dark") return true;
+  if (theme === "light") return false;
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return false;
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}

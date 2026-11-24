@@ -16,6 +16,7 @@ vi.mock('sonner', () => ({
 
 vi.mock('@/hooks/useTheme', () => ({
   useTheme: () => ({ theme: 'light', setTheme: vi.fn() }),
+  useIsDark: () => false,
 }));
 
 function renderMaterialEdit(route: string) {

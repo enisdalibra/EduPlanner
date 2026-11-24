@@ -4,10 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
 import { createNote, updateNote } from "./api";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
-
-import { preprocessMarkdown } from "@/lib/preprocessMarkdown";
-
-import { useTheme } from "@/hooks/useTheme";
+import { useIsDark } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -15,15 +12,6 @@ import { Icon } from "@/components/ui/icon";
 import { countQuizQuestions } from "@/lib/quizParser";
 import { INPUT_LIMITS } from "@/lib/validation";
 import { partitionSubjectsForClasses } from "@/lib/subjectRelations";
-
-// ─── Theme ────────────────────────────────────────────────────────────────────
-
-function useIsDark(): boolean {
-  const { theme } = useTheme();
-  if (theme === "dark") return true;
-  if (theme === "light") return false;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
-}
 
 // ─── Word counter ─────────────────────────────────────────────────────────────
 
@@ -353,10 +341,7 @@ export function MaterialEditView() {
                   isDark && "prose-invert"
                 )}>
                   <MarkdownRenderer isDark={isDark}>
-
-
-
-                    {preprocessMarkdown(content)}
+                    {content}
                   </MarkdownRenderer>
                 </div>
               ) : (

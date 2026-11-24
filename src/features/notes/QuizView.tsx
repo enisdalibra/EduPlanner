@@ -403,7 +403,7 @@ export function QuizView() {
 
           {/* Question text */}
           <div className="panel-lg !p-5 md:!p-7 rounded-2xl shadow-sm border border-gray-200/80 dark:border-gray-700/80">
-            <div className="prose prose-lg md:prose-xl dark:prose-invert max-w-none [&_p]:font-bold [&_p]:text-xl md:[&_p]:text-2xl [&_p]:leading-relaxed [&_p]:text-text dark:[&_p]:text-white">
+            <div className="prose prose-lg md:prose-xl dark:prose-invert max-w-none flow-root [&_p]:font-bold [&_p]:text-xl md:[&_p]:text-2xl [&_p]:leading-relaxed [&_p]:text-text dark:[&_p]:text-white">
               <MarkdownRenderer>
                 {question.questionMarkdown || question.heading}
               </MarkdownRenderer>
@@ -434,11 +434,17 @@ export function QuizView() {
                 : "bg-danger/10 text-danger border-2 border-danger/30"
             )}>
               <Icon name={answer.isCorrect ? "check_circle" : "cancel"} className="text-[24px] sm:text-[28px] flex-shrink-0" />
-              <span>
-                {answer.isCorrect
-                  ? t('quizView.answeredCorrectly').replace('{{pts}}', String(question.pointValue))
-                  : t('quizView.answeredWrong') + " " + question.options.find(o => o.isCorrect)?.text
-                }
+              <span className="flex items-center gap-1.5 flex-wrap">
+                {answer.isCorrect ? (
+                  t('quizView.answeredCorrectly').replace('{{pts}}', String(question.pointValue))
+                ) : (
+                  <>
+                    <span>{t('quizView.answeredWrong')}</span>
+                    <MarkdownRenderer inline>
+                      {question.options.find(o => o.isCorrect)?.text || ""}
+                    </MarkdownRenderer>
+                  </>
+                )}
               </span>
             </div>
           )}
