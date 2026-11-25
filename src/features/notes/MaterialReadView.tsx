@@ -4,25 +4,13 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
 import { deleteNote } from "./api";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
-
-import { preprocessMarkdown } from "@/lib/preprocessMarkdown";
-
-import { useTheme } from "@/hooks/useTheme";
+import { useIsDark } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { format } from "date-fns";
 import { id as localeId, enUS as localeEn } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
-
-// ─── Theme ────────────────────────────────────────────────────────────────────
-
-function useIsDark(): boolean {
-  const { theme } = useTheme();
-  if (theme === "dark") return true;
-  if (theme === "light") return false;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
-}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -183,14 +171,11 @@ export function MaterialReadView() {
 
           {/* Markdown content */}
           <div className={cn(
-            "prose md:prose-lg dark:prose-invert max-w-none markdown-body flow-root",
+            "prose md:prose-lg dark:prose-invert max-w-none markdown-body",
             isDark && "prose-invert"
           )}>
-            <MarkdownRenderer isDark={isDark}>
-
-
-
-              {preprocessMarkdown(note.content || "")}
+            <MarkdownRenderer>
+              {note.content || ""}
             </MarkdownRenderer>
           </div>
 

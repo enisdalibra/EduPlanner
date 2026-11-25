@@ -3,11 +3,8 @@ import { useParams, useNavigate } from "react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
-
 import { useTranslation } from "@/hooks/useTranslation";
-import { useTheme } from "@/hooks/useTheme";
-import { preprocessMarkdown } from "@/lib/preprocessMarkdown";
-
+import { useIsDark } from "@/hooks/useTheme";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { parsePresentation, type PresentationSlide } from "@/lib/presentationParser";
@@ -18,16 +15,6 @@ type AnswerState = {
 };
 
 const OPTION_LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H"];
-
-// ─── Resolve effective dark mode ───────────────────────────────────────────────
-
-function useIsDark(): boolean {
-  const { theme } = useTheme();
-  if (theme === 'dark') return true;
-  if (theme === 'light') return false;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches;
-}
-
 
 // ─── Slide Thumbnail Dots ───────────────────────────────────────────────────────
 
@@ -337,10 +324,9 @@ export function PresentationView() {
 
           {/* Slide body — Markdown rendered */}
           {slide.kind === "material" && slide.body && (
-            // flow-root establishes a new BFC so floated images are properly contained
-            <div className={cn(proseClass, "flow-root")}>
+            <div className={proseClass}>
               <MarkdownRenderer isDark={isDark} presentationMode>
-                {preprocessMarkdown(slide.body)}
+                {slide.body}
               </MarkdownRenderer>
             </div>
           )}
@@ -351,7 +337,7 @@ export function PresentationView() {
               {slide.question.questionMarkdown && (
                 <div className={cn(proseClass, "max-w-none mb-7")}>
                   <MarkdownRenderer isDark={isDark} presentationMode>
-                    {preprocessMarkdown(slide.question.questionMarkdown)}
+                    {slide.question.questionMarkdown}
                   </MarkdownRenderer>
                 </div>
               )}
