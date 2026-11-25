@@ -1,3 +1,4 @@
+import { splitMarkdownByH2 } from "./markdownFence";
 import { parseQuiz, type QuizQuestion } from "./quizParser";
 
 export interface MaterialSlide {
@@ -27,7 +28,7 @@ export function parsePresentation(content: string, docTitle: string): Presentati
   if (!content?.trim()) return [];
 
   const slides: PresentationSlide[] = [];
-  const parts = content.split(/^(?=## )/m);
+  const parts = splitMarkdownByH2(content);
   let questionIndex = 0;
 
   for (const part of parts) {

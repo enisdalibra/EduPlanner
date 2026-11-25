@@ -20,6 +20,8 @@
  *  - Point value per question = 100 / totalQuestions (distributed evenly).
  */
 
+import { splitMarkdownByH2, stepFenceState, type FenceState } from "./markdownFence";
+
 export interface QuizOption {
   text: string;
   isCorrect: boolean;
@@ -41,7 +43,20 @@ export interface QuizQuestion {
  * (i.e., has at least one answer option line `* ... [*]` or `- ... [*]`).
  */
 export function hasQuizContent(content: string): boolean {
-  return /^[*-]\s+.+\[\*\]\s*$/m.test(content);
+  if (!content) return false;
+
+  let fence: FenceState | null = null;
+  for (const line of content.split("\n")) {
+    const normalized = line.endsWith("\r") ? line.slice(0, -1) : line;
+    const { inFence, nextFence } = stepFenceState(normalized, fence);
+    fence = nextFence;
+
+    if (!inFence && /^[*-]\s+.+\[\*\]\s*$/.test(normalized)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -58,9 +73,9 @@ export function countQuizQuestions(content: string): number {
 export function parseQuiz(content: string): QuizQuestion[] {
   if (!content?.trim()) return [];
 
-  // Split content into question blocks using ## headings or --- separators.
+  // Split content into question blocks using ## headings outside fenced code blocks.
   // We keep the delimiter in the result so we can extract heading text.
-  const rawBlocks = content.split(/^(?=## )/m);
+  const rawBlocks = splitMarkdownByH2(content);
 
   const questions: QuizQuestion[] = [];
 
@@ -73,12 +88,17 @@ export function parseQuiz(content: string): QuizQuestion[] {
     let heading = '';
     const questionLines: string[] = [];
     const optionLines: string[] = [];
+    let fence: FenceState | null = null;
 
     for (const line of lines) {
-      if (line.startsWith('## ')) {
-        heading = line.replace(/^## /, '').trim();
-      } else if (/^[*-]\s+/.test(line)) {
-        optionLines.push(line);
+      const normalized = line.endsWith('\r') ? line.slice(0, -1) : line;
+      const { inFence, nextFence } = stepFenceState(normalized, fence);
+      fence = nextFence;
+
+      if (!inFence && normalized.startsWith('## ')) {
+        heading = normalized.replace(/^## /, '').trim();
+      } else if (!inFence && /^[*-]\s+/.test(normalized)) {
+        optionLines.push(normalized);
       } else {
         questionLines.push(line);
       }
