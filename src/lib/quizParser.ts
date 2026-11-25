@@ -20,7 +20,7 @@
  *  - Point value per question = 100 / totalQuestions (distributed evenly).
  */
 
-import { splitMarkdownByH2, stepFenceState, type FenceState } from "./markdownFence";
+import { iterateMarkdownLines, splitMarkdownByH2 } from "./markdownFence";
 
 export interface QuizOption {
   text: string;
@@ -45,13 +45,8 @@ export interface QuizQuestion {
 export function hasQuizContent(content: string): boolean {
   if (!content) return false;
 
-  let fence: FenceState | null = null;
-  for (const line of content.split("\n")) {
-    const normalized = line.endsWith("\r") ? line.slice(0, -1) : line;
-    const { inFence, nextFence } = stepFenceState(normalized, fence);
-    fence = nextFence;
-
-    if (!inFence && /^[*-]\s+.+\[\*\]\s*$/.test(normalized)) {
+  for (const { line, inFence } of iterateMarkdownLines(content)) {
+    if (!inFence && /^[*-]\s+.+\[\*\]\s*$/.test(line)) {
       return true;
     }
   }
@@ -80,27 +75,19 @@ export function parseQuiz(content: string): QuizQuestion[] {
   const questions: QuizQuestion[] = [];
 
   for (const block of rawBlocks) {
-    const trimmed = block.trim();
-    if (!trimmed) continue;
+    if (!block.trim()) continue;
 
-    const lines = trimmed.split('\n');
-    
     let heading = '';
     const questionLines: string[] = [];
     const optionLines: string[] = [];
-    let fence: FenceState | null = null;
 
-    for (const line of lines) {
-      const normalized = line.endsWith('\r') ? line.slice(0, -1) : line;
-      const { inFence, nextFence } = stepFenceState(normalized, fence);
-      fence = nextFence;
-
-      if (!inFence && normalized.startsWith('## ')) {
-        heading = normalized.replace(/^## /, '').trim();
-      } else if (!inFence && /^[*-]\s+/.test(normalized)) {
-        optionLines.push(normalized);
+    for (const { rawLine, line, inFence } of iterateMarkdownLines(block)) {
+      if (!inFence && line.startsWith('## ')) {
+        heading = line.replace(/^## /, '').trim();
+      } else if (!inFence && /^[*-]\s+/.test(line)) {
+        optionLines.push(line);
       } else {
-        questionLines.push(line);
+        questionLines.push(rawLine);
       }
     }
 

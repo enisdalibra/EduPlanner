@@ -18,6 +18,15 @@ export interface FenceStepResult {
   nextFence: FenceState | null;
 }
 
+export interface MarkdownLine {
+  /** Original line text (preserving any trailing `\r`). */
+  rawLine: string;
+  /** Line text with trailing `\r` stripped for pattern matching. */
+  line: string;
+  /** True when this line is inside a fenced code block (including opening/closing fence lines). */
+  inFence: boolean;
+}
+
 const OPENING_FENCE_RE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
 const CLOSING_FENCE_RE = /^ {0,3}(`{3,}|~{3,})[ \t]*$/;
 
@@ -62,25 +71,35 @@ export function stepFenceState(line: string, currentFence: FenceState | null): F
 }
 
 /**
+ * Iterates over a Markdown string line by line, normalizing CRLF endings and
+ * tagging each line with whether it falls inside a fenced code block.
+ */
+export function* iterateMarkdownLines(content: string): Generator<MarkdownLine> {
+  let fence: FenceState | null = null;
+
+  for (const rawLine of content.split("\n")) {
+    const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
+    const { inFence, nextFence } = stepFenceState(line, fence);
+    fence = nextFence;
+
+    yield { rawLine, line, inFence };
+  }
+}
+
+/**
  * Splits a Markdown document at level-2 headings (`## `) that appear outside
  * fenced code blocks. Unclosed fences safely consume all remaining lines.
  */
 export function splitMarkdownByH2(content: string): string[] {
-  const lines = content.split("\n");
   const blocks: string[] = [];
   let currentBlock: string[] = [];
-  let fence: FenceState | null = null;
 
-  for (const line of lines) {
-    const normalized = line.endsWith("\r") ? line.slice(0, -1) : line;
-    const { inFence, nextFence } = stepFenceState(normalized, fence);
-    fence = nextFence;
-
-    if (!inFence && normalized.startsWith("## ") && currentBlock.length > 0) {
+  for (const { rawLine, line, inFence } of iterateMarkdownLines(content)) {
+    if (!inFence && line.startsWith("## ") && currentBlock.length > 0) {
       blocks.push(currentBlock.join("\n"));
-      currentBlock = [line];
+      currentBlock = [rawLine];
     } else {
-      currentBlock.push(line);
+      currentBlock.push(rawLine);
     }
   }
 

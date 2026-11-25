@@ -258,5 +258,26 @@ graph TD
         { text: "Salah", isCorrect: false },
       ]);
     });
+
+    it("preserves 4-space indentation on headingless blocks so indented backticks do not open an unclosed fence", () => {
+      const content = [
+        "    ```mermaid",
+        "    graph TD",
+        "    ```",
+        "",
+        "Pertanyaan setelah blok terindentasi?",
+        "* Benar [*]",
+        "* Salah",
+      ].join("\n");
+
+      expect(hasQuizContent(content)).toBe(true);
+      const questions = parseQuiz(content);
+      expect(questions).toHaveLength(1);
+      expect(questions[0].heading).toBe("Soal 1");
+      expect(questions[0].options).toEqual([
+        { text: "Benar", isCorrect: true },
+        { text: "Salah", isCorrect: false },
+      ]);
+    });
   });
 });
