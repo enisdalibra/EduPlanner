@@ -337,10 +337,10 @@ export function MaterialEditView() {
             <>
               {content ? (
                 <div className={cn(
-                  "prose md:prose-lg dark:prose-invert max-w-none markdown-body flow-root",
+                  "prose md:prose-lg dark:prose-invert max-w-none markdown-body",
                   isDark && "prose-invert"
                 )}>
-                  <MarkdownRenderer isDark={isDark}>
+                  <MarkdownRenderer>
                     {content}
                   </MarkdownRenderer>
                 </div>

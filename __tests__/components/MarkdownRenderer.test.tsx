@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { act, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
 import { ThemeProvider } from '@/hooks/useTheme';
 
@@ -64,6 +64,8 @@ describe('MarkdownRenderer', () => {
     expect(figure?.style.width).toBe('40%');
     // Standalone image must not be wrapped inside a <p> tag
     expect(figure?.closest('p')).toBeNull();
+    // Block renderer encapsulates flow-root to contain hoisted floats
+    expect(container.firstElementChild).toHaveClass('flow-root');
 
     // Floated image should be hoisted before the paragraph in DOM order
     const paragraph = screen.getByText('Paragraf pembuka sebelum gambar.');
@@ -122,6 +124,50 @@ describe('MarkdownRenderer', () => {
     );
     expect(screen.getByRole('img', { name: 'Caption' })).toHaveClass('shadow-black/30');
     unmountOverrideDark();
+  });
+
+  it('reacts to live OS prefers-color-scheme changes when theme is system', () => {
+    const listeners: Array<(event: MediaQueryListEvent) => void> = [];
+    const originalMatchMedia = window.matchMedia;
+    let prefersDark = false;
+
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: prefersDark,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: (_: string, cb: (event: MediaQueryListEvent) => void) => {
+        listeners.push(cb);
+      },
+      removeEventListener: (_: string, cb: (event: MediaQueryListEvent) => void) => {
+        const idx = listeners.indexOf(cb);
+        if (idx >= 0) listeners.splice(idx, 1);
+      },
+      dispatchEvent: vi.fn(),
+    }));
+
+    try {
+      const { unmount } = render(
+        <ThemeProvider defaultTheme="system">
+          <MarkdownRenderer>{'![System](/images/photo.png)'}</MarkdownRenderer>
+        </ThemeProvider>,
+      );
+
+      expect(screen.getByRole('img', { name: 'System' })).toHaveClass('shadow-gray-200/80');
+
+      act(() => {
+        prefersDark = true;
+        for (const listener of [...listeners]) {
+          listener({ matches: true } as MediaQueryListEvent);
+        }
+      });
+
+      expect(screen.getByRole('img', { name: 'System' })).toHaveClass('shadow-black/30');
+      unmount();
+    } finally {
+      window.matchMedia = originalMatchMedia;
+    }
   });
 
   it('renders inline LaTeX math formulas with KaTeX', () => {

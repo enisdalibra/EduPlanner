@@ -95,14 +95,32 @@ export const useTheme = () => {
 };
 
 /**
- * Resolves the effective dark-mode state from the active ThemeProvider preference.
+ * Resolves the effective dark-mode state from the active ThemeProvider preference,
+ * reacting to live OS color-scheme changes when theme is set to "system".
  */
 export function useIsDark(): boolean {
   const { theme } = useTheme();
+  const [systemIsDark, setSystemIsDark] = useState<boolean>(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return false;
+    }
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
+
+  useEffect(() => {
+    if (theme !== "system" || typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    setSystemIsDark(mediaQuery.matches);
+    const handleChange = (event: MediaQueryListEvent) => {
+      setSystemIsDark(event.matches);
+    };
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [theme]);
+
   if (theme === "dark") return true;
   if (theme === "light") return false;
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-    return false;
-  }
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  return systemIsDark;
 }

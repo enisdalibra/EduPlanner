@@ -4,6 +4,7 @@ import { MarkdownImage } from '@/components/ui/MarkdownImage';
 import { useIsDark } from '@/hooks/useTheme';
 import { markdownRemarkPlugins, markdownRehypePlugins } from '@/lib/markdownPlugins';
 import { preprocessMarkdown } from '@/lib/preprocessMarkdown';
+import { cn } from '@/lib/utils';
 
 export interface MarkdownRendererProps {
   children: string;
@@ -68,13 +69,14 @@ export function MarkdownRenderer({
     </ReactMarkdown>
   );
 
-  if (className) {
-    return inline ? (
+  if (inline) {
+    return className ? (
       <span className={className}>{markdownContent}</span>
     ) : (
-      <div className={className}>{markdownContent}</div>
+      markdownContent
     );
   }
 
-  return markdownContent;
+  // flow-root establishes a BFC so hoisted floated images are always contained
+  return <div className={cn('flow-root', className)}>{markdownContent}</div>;
 }

@@ -324,8 +324,7 @@ export function PresentationView() {
 
           {/* Slide body — Markdown rendered */}
           {slide.kind === "material" && slide.body && (
-            // flow-root establishes a new BFC so floated images are properly contained
-            <div className={cn(proseClass, "flow-root")}>
+            <div className={proseClass}>
               <MarkdownRenderer isDark={isDark} presentationMode>
                 {slide.body}
               </MarkdownRenderer>
@@ -336,7 +335,7 @@ export function PresentationView() {
           {slide.kind === "quiz" && (
             <div className="space-y-5 pb-20">
               {slide.question.questionMarkdown && (
-                <div className={cn(proseClass, "max-w-none mb-7 flow-root")}>
+                <div className={cn(proseClass, "max-w-none mb-7")}>
                   <MarkdownRenderer isDark={isDark} presentationMode>
                     {slide.question.questionMarkdown}
                   </MarkdownRenderer>
