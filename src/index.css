@@ -327,7 +327,16 @@
   display: block;
 }
 
+/* Scoped Content Viewport zoom (reflows typography & blocks without scaling UI Chrome) */
+.content-zoom-viewport {
+  zoom: var(--content-zoom, 1);
+}
+
 /* Native modal dialog scroll containment (modern-web-guidance) */
+dialog.mermaid-lightbox {
+  zoom: calc(1 / var(--content-zoom, 1));
+}
+
 dialog.mermaid-lightbox:modal {
   overscroll-behavior: contain;
 }

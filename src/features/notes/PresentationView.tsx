@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+import { ContentZoomControls } from "@/components/ui/ContentZoomControls";
+import { useContentZoom } from "@/hooks/useContentZoom";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useIsDark } from "@/hooks/useTheme";
 import { Icon } from "@/components/ui/icon";
@@ -61,6 +63,7 @@ export function PresentationView() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isThumbsOpen, setIsThumbsOpen] = useState(false);
   const [answers, setAnswers] = useState<Record<number, AnswerState>>({});
+  const contentZoom = useContentZoom("presentation", { enabled: slides.length > 0 });
 
   useEffect(() => {
     if (note?.content) {
@@ -246,19 +249,32 @@ export function PresentationView() {
           </button>
         </div>
 
-        {/* Right: quiz progress or keyboard hint */}
-        {quizSlides.length > 0 ? (
-          <div className="pointer-events-auto flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-full text-xs font-bold">
-            <Icon name="quiz" className="w-4 h-4" />
-            {answeredCount === quizSlides.length
-              ? `${t('presentationView.quizScore')} ${quizScore}/100`
-              : `${t('presentationView.quizProgress')} ${correctCount}/${answeredCount}`}
-          </div>
-        ) : (
-          <div className={cn("text-xs hidden sm:block", hintText)}>
-            ← → {t('presentationView.navigate')} · Esc {t('presentationView.exit')}
-          </div>
-        )}
+        {/* Right: content zoom controls + quiz progress or keyboard hint */}
+        <div className="pointer-events-auto flex items-center gap-2.5">
+          <ContentZoomControls
+            zoomPercent={contentZoom.zoomPercent}
+            canZoomIn={contentZoom.canZoomIn}
+            canZoomOut={contentZoom.canZoomOut}
+            isDefault={contentZoom.isDefault}
+            onZoomIn={contentZoom.zoomIn}
+            onZoomOut={contentZoom.zoomOut}
+            onReset={contentZoom.resetZoom}
+            variant="hud"
+            isDark={isDark}
+          />
+          {quizSlides.length > 0 ? (
+            <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-full text-xs font-bold">
+              <Icon name="quiz" className="w-4 h-4" />
+              {answeredCount === quizSlides.length
+                ? `${t('presentationView.quizScore')} ${quizScore}/100`
+                : `${t('presentationView.quizProgress')} ${correctCount}/${answeredCount}`}
+            </div>
+          ) : (
+            <div className={cn("text-xs hidden lg:block", hintText)}>
+              ← → {t('presentationView.navigate')} · Esc {t('presentationView.exit')}
+            </div>
+          )}
+        </div>
       </header>
 
       {/* ── Slide panel thumbnails dropdown ── */}
@@ -293,7 +309,10 @@ export function PresentationView() {
       >
         <div
           key={currentIndex}
-          className="w-full max-w-5xl animate-[viewFadeIn_0.3s_ease-out]"
+          data-testid="presentation-content-viewport"
+          data-content-zoom={contentZoom.zoom}
+          style={contentZoom.viewportStyle}
+          className="content-zoom-viewport w-full max-w-5xl animate-[viewFadeIn_0.3s_ease-out]"
         >
           {/* Non-cover slide heading */}
           {!slide.isCover && slide.heading && (

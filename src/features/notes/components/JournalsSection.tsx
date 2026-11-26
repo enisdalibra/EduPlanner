@@ -4,6 +4,8 @@ import { db } from "@/db/database";
 import { getSubjectsForClass } from "@/lib/subjectRelations";
 import { createNote, deleteNote, getNotes, getNotesByClass, updateNote } from "../api";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+import { ContentZoomControls } from "@/components/ui/ContentZoomControls";
+import { useContentZoom } from "@/hooks/useContentZoom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -79,6 +81,7 @@ export function JournalsSection({
   // View Dialog
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [viewingId, setViewingId] = useState<string | null>(null);
+  const contentZoom = useContentZoom("reader", { enabled: isViewOpen });
 
   const openNewDialog = () => {
     if (readOnly) return;
@@ -310,25 +313,42 @@ export function JournalsSection({
               {viewingNote?.title}
             </DialogTitle>
             {viewingNote && (
-              <div className="flex flex-wrap gap-2 mt-4 items-center">
-                <div className="text-xs font-bold uppercase tracking-wider text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
-                  {format(viewingNote.createdAt, "d MMMM yyyy", { locale: currentLocale })}
+              <div className="flex flex-wrap items-center justify-between gap-2 mt-4">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <div className="text-xs font-bold uppercase tracking-wider text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
+                    {format(viewingNote.createdAt, "d MMMM yyyy", { locale: currentLocale })}
+                  </div>
+                  {viewingClsName && (
+                    <div className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1 rounded-full">
+                      {viewingClsName}
+                    </div>
+                  )}
+                  {viewingSubj && (
+                    <div className="text-xs font-bold uppercase tracking-wider text-success bg-success/10 px-3 py-1 rounded-full">
+                      {viewingSubj.name}
+                    </div>
+                  )}
                 </div>
-                {viewingClsName && (
-                  <div className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1 rounded-full">
-                    {viewingClsName}
-                  </div>
-                )}
-                {viewingSubj && (
-                  <div className="text-xs font-bold uppercase tracking-wider text-success bg-success/10 px-3 py-1 rounded-full">
-                    {viewingSubj.name}
-                  </div>
-                )}
+                <ContentZoomControls
+                  zoomPercent={contentZoom.zoomPercent}
+                  canZoomIn={contentZoom.canZoomIn}
+                  canZoomOut={contentZoom.canZoomOut}
+                  isDefault={contentZoom.isDefault}
+                  onZoomIn={contentZoom.zoomIn}
+                  onZoomOut={contentZoom.zoomOut}
+                  onReset={contentZoom.resetZoom}
+                  variant="surface"
+                />
               </div>
             )}
           </DialogHeader>
           <div className="flex-1 overflow-y-auto px-8 py-8 bg-white dark:bg-gray-800">
-            <div className="prose prose-slate dark:prose-invert md:prose-base max-w-none markdown-body">
+            <div
+              data-testid="journal-content-viewport"
+              data-content-zoom={contentZoom.zoom}
+              style={contentZoom.viewportStyle}
+              className="content-zoom-viewport prose prose-slate dark:prose-invert md:prose-base max-w-none markdown-body"
+            >
               <MarkdownRenderer>{viewingNote?.content || ""}</MarkdownRenderer>
             </div>
           </div>

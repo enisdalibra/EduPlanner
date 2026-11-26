@@ -5,6 +5,8 @@ import { db } from "@/db/database";
 import { getSubjectsForClass } from "@/lib/subjectRelations";
 import { createNote, deleteNote, getNotes, getNotesByClass, updateNote } from "../api";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+import { ContentZoomControls } from "@/components/ui/ContentZoomControls";
+import { useContentZoom } from "@/hooks/useContentZoom";
 import { hasQuizContent, countQuizQuestions } from "@/lib/quizParser";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -110,6 +112,7 @@ export function EvaluationsSection({
   // View Dialog
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [viewingId, setViewingId] = useState<string | null>(null);
+  const contentZoom = useContentZoom("reader", { enabled: isViewOpen });
 
   const openNewDialog = () => {
     if (readOnly) return;
@@ -399,11 +402,27 @@ export function EvaluationsSection({
                     {t("quizView.badgeInteractive")} - {t("quizView.badgeNQuestions", { n: viewingQuizCount })}
                   </div>
                 )}
+                <ContentZoomControls
+                  zoomPercent={contentZoom.zoomPercent}
+                  canZoomIn={contentZoom.canZoomIn}
+                  canZoomOut={contentZoom.canZoomOut}
+                  isDefault={contentZoom.isDefault}
+                  onZoomIn={contentZoom.zoomIn}
+                  onZoomOut={contentZoom.zoomOut}
+                  onReset={contentZoom.resetZoom}
+                  variant="surface"
+                  className="ml-auto"
+                />
               </div>
             )}
           </DialogHeader>
           <div className="flex-1 overflow-y-auto px-8 py-8 bg-white dark:bg-gray-800">
-            <div className="prose prose-slate dark:prose-invert md:prose-base max-w-none markdown-body">
+            <div
+              data-testid="evaluation-content-viewport"
+              data-content-zoom={contentZoom.zoom}
+              style={contentZoom.viewportStyle}
+              className="content-zoom-viewport prose prose-slate dark:prose-invert md:prose-base max-w-none markdown-body"
+            >
               <MarkdownRenderer>{viewingNote?.content || ""}</MarkdownRenderer>
             </div>
           </div>

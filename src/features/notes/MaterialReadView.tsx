@@ -4,6 +4,8 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
 import { deleteNote } from "./api";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+import { ContentZoomControls } from "@/components/ui/ContentZoomControls";
+import { useContentZoom } from "@/hooks/useContentZoom";
 import { useIsDark } from "@/hooks/useTheme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { format } from "date-fns";
@@ -27,6 +29,7 @@ export function MaterialReadView() {
   );
   const classes = useLiveQuery(() => db.classes.toArray());
   const subjects = useLiveQuery(() => db.subjects.toArray());
+  const contentZoom = useContentZoom("reader", { enabled: Boolean(note) });
 
   // Redirect if note not found after load
   useEffect(() => {
@@ -107,8 +110,19 @@ export function MaterialReadView() {
           {note.title}
         </span>
 
-        {/* Right: Edit + Presentasikan (single source of truth) */}
+        {/* Right: Content Zoom + Edit + Presentasikan (single source of truth) */}
         <div className="flex items-center gap-2">
+          <ContentZoomControls
+            zoomPercent={contentZoom.zoomPercent}
+            canZoomIn={contentZoom.canZoomIn}
+            canZoomOut={contentZoom.canZoomOut}
+            isDefault={contentZoom.isDefault}
+            onZoomIn={contentZoom.zoomIn}
+            onZoomOut={contentZoom.zoomOut}
+            onReset={contentZoom.resetZoom}
+            variant="surface"
+            isDark={isDark}
+          />
           <button
             onClick={() => navigate(`/materials/${note.id}/edit`)}
             className={cn(
@@ -134,7 +148,12 @@ export function MaterialReadView() {
 
       {/* ── Main content ── */}
       <main className="flex-1 overflow-y-auto">
-        <article className="max-w-3xl mx-auto px-6 sm:px-10 py-12">
+        <article
+          data-testid="material-content-viewport"
+          data-content-zoom={contentZoom.zoom}
+          style={contentZoom.viewportStyle}
+          className="content-zoom-viewport max-w-3xl mx-auto px-6 sm:px-10 py-12"
+        >
 
           {/* Meta badges */}
           <div className="flex flex-wrap gap-2 mb-8 items-center">

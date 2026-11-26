@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/db/database";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+import { ContentZoomControls } from "@/components/ui/ContentZoomControls";
+import { useContentZoom } from "@/hooks/useContentZoom";
 
 import { parseQuiz, type QuizQuestion } from "@/lib/quizParser";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -250,6 +252,7 @@ export function QuizView() {
 
   const showHeader = isNearTop || isHeaderHovered || isFocusedTop;
   const showFooter = isNearBottom || isFooterHovered || isFocusedBottom;
+  const contentZoom = useContentZoom("quiz", { enabled: !showResults && questions.length > 0 });
 
   // Loading state
   if (!note) {
@@ -369,21 +372,39 @@ export function QuizView() {
             </div>
           </div>
 
-          {/* Right: Score badge */}
-          <div className="flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 backdrop-blur-md px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-xs font-bold shadow-sm flex-shrink-0">
-            <Icon name="stars" className="w-4 h-4" />
-            <span>
-              {Math.round(Object.entries(answers).reduce((sum, [idx, ans]) =>
-                ans.isCorrect ? sum + questions[Number(idx)].pointValue : sum, 0
-              ))} / 100
-            </span>
+          {/* Right: Content Zoom + Score badge */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <ContentZoomControls
+              zoomPercent={contentZoom.zoomPercent}
+              canZoomIn={contentZoom.canZoomIn}
+              canZoomOut={contentZoom.canZoomOut}
+              isDefault={contentZoom.isDefault}
+              onZoomIn={contentZoom.zoomIn}
+              onZoomOut={contentZoom.zoomOut}
+              onReset={contentZoom.resetZoom}
+              variant="hud"
+            />
+            <div className="flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 backdrop-blur-md px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-xs font-bold shadow-sm flex-shrink-0">
+              <Icon name="stars" className="w-4 h-4" />
+              <span>
+                {Math.round(Object.entries(answers).reduce((sum, [idx, ans]) =>
+                  ans.isCorrect ? sum + questions[Number(idx)].pointValue : sum, 0
+                ))} / 100
+              </span>
+            </div>
           </div>
         </div>
       </header>
 
       {/* ── Question Area ── */}
       <main className="flex-1 flex flex-col justify-center max-w-4xl mx-auto w-full px-4 sm:px-6 pt-14 pb-20 sm:pt-16 sm:pb-24 gap-6">
-        <div key={currentIndex} className="flex flex-col gap-5 sm:gap-6 animate-[viewFadeIn_0.25s_ease-out]">
+        <div
+          key={currentIndex}
+          data-testid="quiz-content-viewport"
+          data-content-zoom={contentZoom.zoom}
+          style={contentZoom.viewportStyle}
+          className="content-zoom-viewport flex flex-col gap-5 sm:gap-6 animate-[viewFadeIn_0.25s_ease-out]"
+        >
           {/* Question number + points */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

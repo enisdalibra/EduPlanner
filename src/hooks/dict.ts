@@ -736,6 +736,12 @@ export const dict = {
       closeLightbox: "Tutup pratinjau",
       panHint: "Seret untuk menggeser, gulir untuk zoom"
     },
+    contentZoom: {
+      toolbarLabel: "Kontrol zoom konten",
+      zoomIn: "Perbesar konten",
+      zoomOut: "Perkecil konten",
+      reset: "Reset zoom konten (100%)"
+    },
     scheduling: {
       tabSchedules: "Jadwal",
       addSchedule: "Tambah Jadwal",
@@ -1579,6 +1585,12 @@ export const dict = {
       resetZoom: "Reset view",
       closeLightbox: "Close preview",
       panHint: "Drag to pan, scroll to zoom"
+    },
+    contentZoom: {
+      toolbarLabel: "Content zoom controls",
+      zoomIn: "Zoom in content",
+      zoomOut: "Zoom out content",
+      reset: "Reset content zoom (100%)"
     },
     scheduling: {
       tabSchedules: "Schedule",
