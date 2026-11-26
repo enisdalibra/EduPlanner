@@ -113,13 +113,7 @@ export function MaterialReadView() {
         {/* Right: Content Zoom + Edit + Presentasikan (single source of truth) */}
         <div className="flex items-center gap-2">
           <ContentZoomControls
-            zoomPercent={contentZoom.zoomPercent}
-            canZoomIn={contentZoom.canZoomIn}
-            canZoomOut={contentZoom.canZoomOut}
-            isDefault={contentZoom.isDefault}
-            onZoomIn={contentZoom.zoomIn}
-            onZoomOut={contentZoom.zoomOut}
-            onReset={contentZoom.resetZoom}
+            controller={contentZoom}
             variant="surface"
             isDark={isDark}
           />

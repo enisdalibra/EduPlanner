@@ -252,13 +252,7 @@ export function PresentationView() {
         {/* Right: content zoom controls + quiz progress or keyboard hint */}
         <div className="pointer-events-auto flex items-center gap-2.5">
           <ContentZoomControls
-            zoomPercent={contentZoom.zoomPercent}
-            canZoomIn={contentZoom.canZoomIn}
-            canZoomOut={contentZoom.canZoomOut}
-            isDefault={contentZoom.isDefault}
-            onZoomIn={contentZoom.zoomIn}
-            onZoomOut={contentZoom.zoomOut}
-            onReset={contentZoom.resetZoom}
+            controller={contentZoom}
             variant="hud"
             isDark={isDark}
           />

@@ -24,15 +24,7 @@ function TestHarness({
   return (
     <div>
       <header data-testid="ui-chrome">
-        <ContentZoomControls
-          zoomPercent={controller.zoomPercent}
-          canZoomIn={controller.canZoomIn}
-          canZoomOut={controller.canZoomOut}
-          isDefault={controller.isDefault}
-          onZoomIn={controller.zoomIn}
-          onZoomOut={controller.zoomOut}
-          onReset={controller.resetZoom}
-        />
+        <ContentZoomControls controller={controller} />
       </header>
       <div
         data-testid="content-viewport"
@@ -223,5 +215,79 @@ describe('useContentZoom & ContentZoomControls', () => {
     } finally {
       dialog.remove();
     }
+  });
+
+  it('pauses keyboard, wheel, and Safari gesture interception when an editable input is focused', () => {
+    render(
+      <div>
+        <input data-testid="editable-input" />
+        <TestHarness scope="reader" />
+      </div>,
+    );
+
+    const input = screen.getByTestId('editable-input');
+    input.focus();
+
+    const keyEvent = new KeyboardEvent('keydown', {
+      key: '+',
+      ctrlKey: true,
+      cancelable: true,
+      bubbles: true,
+    });
+    act(() => {
+      input.dispatchEvent(keyEvent);
+    });
+    expect(keyEvent.defaultPrevented).toBe(false);
+    expect(useUiStore.getState().contentZoom.reader).toBe(1);
+
+    const wheelEvent = new WheelEvent('wheel', {
+      deltaY: -100,
+      ctrlKey: true,
+      cancelable: true,
+    });
+    act(() => {
+      window.dispatchEvent(wheelEvent);
+    });
+    expect(wheelEvent.defaultPrevented).toBe(false);
+    expect(useUiStore.getState().contentZoom.reader).toBe(1);
+
+    const gestureChange = new Event('gesturechange', { cancelable: true }) as Event & { scale?: number };
+    gestureChange.scale = 1.4;
+    act(() => {
+      window.dispatchEvent(gestureChange);
+    });
+    expect(gestureChange.defaultPrevented).toBe(false);
+    expect(useUiStore.getState().contentZoom.reader).toBe(1);
+  });
+
+  it('scales content zoom on Safari trackpad pinch gesturestart/gesturechange/gestureend', () => {
+    render(<TestHarness scope="presentation" />);
+
+    const gestureStart = new Event('gesturestart', { cancelable: true });
+    const gestureZoomIn = new Event('gesturechange', { cancelable: true }) as Event & { scale?: number };
+    gestureZoomIn.scale = 1.3;
+    const gestureEnd = new Event('gestureend');
+
+    act(() => {
+      window.dispatchEvent(gestureStart);
+      window.dispatchEvent(gestureZoomIn);
+      window.dispatchEvent(gestureEnd);
+    });
+
+    expect(gestureStart.defaultPrevented).toBe(true);
+    expect(gestureZoomIn.defaultPrevented).toBe(true);
+    expect(useUiStore.getState().contentZoom.presentation).toBe(1.3);
+
+    // Subsequent pinch starts from the updated zoom level (1.3 * 0.8 = 1.04)
+    const secondStart = new Event('gesturestart', { cancelable: true });
+    const secondChange = new Event('gesturechange', { cancelable: true }) as Event & { scale?: number };
+    secondChange.scale = 0.8;
+    act(() => {
+      window.dispatchEvent(secondStart);
+      window.dispatchEvent(secondChange);
+      window.dispatchEvent(new Event('gestureend'));
+    });
+
+    expect(useUiStore.getState().contentZoom.presentation).toBe(1.04);
   });
 });

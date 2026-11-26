@@ -39,6 +39,13 @@ function isEditableTarget(target: EventTarget | null): boolean {
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 }
 
+function hasEditableFocus(target: EventTarget | null): boolean {
+  return (
+    isEditableTarget(target) ||
+    (typeof document !== 'undefined' && isEditableTarget(document.activeElement))
+  );
+}
+
 /**
  * Manages scoped Content Viewport zoom for reading, presentation, and quiz views.
  * Intercepts Ctrl/Cmd + (+/- / 0 / wheel / trackpad pinch) while active so browser-wide
@@ -51,10 +58,15 @@ export function useContentZoom(
   const { enabled = true } = options;
 
   const zoom = useUiStore((state) => state.contentZoom?.[scope] ?? CONTENT_ZOOM_DEFAULT);
+  const setContentZoom = useUiStore((state) => state.setContentZoom);
   const adjustContentZoom = useUiStore((state) => state.adjustContentZoom);
   const resetContentZoom = useUiStore((state) => state.resetContentZoom);
 
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+
   const wheelAccumulatorRef = useRef(0);
+  const gestureBaseZoomRef = useRef<number | null>(null);
 
   const zoomIn = useCallback(() => {
     adjustContentZoom(scope, CONTENT_ZOOM_STEP);
@@ -71,14 +83,14 @@ export function useContentZoom(
   useEffect(() => {
     if (!enabled) {
       wheelAccumulatorRef.current = 0;
+      gestureBaseZoomRef.current = null;
       return;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.altKey) return;
       if (!event.ctrlKey && !event.metaKey) return;
-      if (isMermaidLightboxOpen()) return;
-      if (isEditableTarget(event.target)) return;
+      if (isMermaidLightboxOpen() || hasEditableFocus(event.target)) return;
 
       const { key, code } = event;
       if (key === '+' || key === '=' || code === 'Equal' || code === 'NumpadAdd') {
@@ -96,7 +108,7 @@ export function useContentZoom(
     const handleWheel = (event: WheelEvent) => {
       if (event.defaultPrevented) return;
       if (!event.ctrlKey && !event.metaKey) return;
-      if (isMermaidLightboxOpen()) return;
+      if (isMermaidLightboxOpen() || hasEditableFocus(event.target)) return;
       if (event.deltaY === 0) return;
 
       event.preventDefault();
@@ -124,24 +136,42 @@ export function useContentZoom(
       }
     };
 
-    const handleSafariGesture = (event: Event) => {
-      if (isMermaidLightboxOpen()) return;
+    const handleGestureStart = (event: Event) => {
+      if (isMermaidLightboxOpen() || hasEditableFocus(event.target)) return;
       event.preventDefault();
+      gestureBaseZoomRef.current = zoomRef.current;
+    };
+
+    const handleGestureChange = (event: Event) => {
+      if (isMermaidLightboxOpen() || hasEditableFocus(event.target)) return;
+      event.preventDefault();
+      const scale = (event as Event & { scale?: number }).scale;
+      if (typeof scale === 'number' && Number.isFinite(scale) && scale > 0) {
+        const base = gestureBaseZoomRef.current ?? zoomRef.current;
+        setContentZoom(scope, base * scale);
+      }
+    };
+
+    const handleGestureEnd = () => {
+      gestureBaseZoomRef.current = null;
     };
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('wheel', handleWheel, { passive: false });
-    window.addEventListener('gesturestart', handleSafariGesture, { passive: false });
-    window.addEventListener('gesturechange', handleSafariGesture, { passive: false });
+    window.addEventListener('gesturestart', handleGestureStart, { passive: false });
+    window.addEventListener('gesturechange', handleGestureChange, { passive: false });
+    window.addEventListener('gestureend', handleGestureEnd);
 
     return () => {
       wheelAccumulatorRef.current = 0;
+      gestureBaseZoomRef.current = null;
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('gesturestart', handleSafariGesture);
-      window.removeEventListener('gesturechange', handleSafariGesture);
+      window.removeEventListener('gesturestart', handleGestureStart);
+      window.removeEventListener('gesturechange', handleGestureChange);
+      window.removeEventListener('gestureend', handleGestureEnd);
     };
-  }, [enabled, resetZoom, zoomIn, zoomOut]);
+  }, [enabled, resetZoom, scope, setContentZoom, zoomIn, zoomOut]);
 
   const viewportStyle = useMemo<CSSProperties>(
     () => ({ '--content-zoom': String(zoom) } as CSSProperties),

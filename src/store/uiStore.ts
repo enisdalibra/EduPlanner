@@ -20,6 +20,18 @@ export function clampContentZoom(value: number): number {
   return Math.round(clamped * 100) / 100;
 }
 
+function updateScopeZoom(
+  current: Record<ContentZoomScope, number> | undefined,
+  scope: ContentZoomScope,
+  nextZoom: number,
+): Record<ContentZoomScope, number> {
+  return {
+    ...DEFAULT_CONTENT_ZOOM,
+    ...current,
+    [scope]: clampContentZoom(nextZoom),
+  };
+}
+
 interface UiState {
   sidebarOpen: boolean; // Mobile toggle
   setSidebarOpen: (isOpen: boolean) => void;
@@ -63,30 +75,18 @@ export const useUiStore = create<UiState>()(
       contentZoom: { ...DEFAULT_CONTENT_ZOOM },
       setContentZoom: (scope, zoom) =>
         set((state) => ({
-          contentZoom: {
-            ...DEFAULT_CONTENT_ZOOM,
-            ...state.contentZoom,
-            [scope]: clampContentZoom(zoom),
-          },
+          contentZoom: updateScopeZoom(state.contentZoom, scope, zoom),
         })),
       adjustContentZoom: (scope, delta) =>
         set((state) => {
           const current = state.contentZoom?.[scope] ?? CONTENT_ZOOM_DEFAULT;
           return {
-            contentZoom: {
-              ...DEFAULT_CONTENT_ZOOM,
-              ...state.contentZoom,
-              [scope]: clampContentZoom(current + delta),
-            },
+            contentZoom: updateScopeZoom(state.contentZoom, scope, current + delta),
           };
         }),
       resetContentZoom: (scope) =>
         set((state) => ({
-          contentZoom: {
-            ...DEFAULT_CONTENT_ZOOM,
-            ...state.contentZoom,
-            [scope]: CONTENT_ZOOM_DEFAULT,
-          },
+          contentZoom: updateScopeZoom(state.contentZoom, scope, CONTENT_ZOOM_DEFAULT),
         })),
     }),
     {

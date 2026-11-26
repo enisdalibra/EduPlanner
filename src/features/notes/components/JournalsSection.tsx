@@ -330,13 +330,7 @@ export function JournalsSection({
                   )}
                 </div>
                 <ContentZoomControls
-                  zoomPercent={contentZoom.zoomPercent}
-                  canZoomIn={contentZoom.canZoomIn}
-                  canZoomOut={contentZoom.canZoomOut}
-                  isDefault={contentZoom.isDefault}
-                  onZoomIn={contentZoom.zoomIn}
-                  onZoomOut={contentZoom.zoomOut}
-                  onReset={contentZoom.resetZoom}
+                  controller={contentZoom}
                   variant="surface"
                 />
               </div>

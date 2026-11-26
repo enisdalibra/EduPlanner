@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Tanggal:** 2026-11-26
+- **Issue terkait:** ENI-98
 
 ## Konteks
 

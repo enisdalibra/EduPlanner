@@ -375,13 +375,7 @@ export function QuizView() {
           {/* Right: Content Zoom + Score badge */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <ContentZoomControls
-              zoomPercent={contentZoom.zoomPercent}
-              canZoomIn={contentZoom.canZoomIn}
-              canZoomOut={contentZoom.canZoomOut}
-              isDefault={contentZoom.isDefault}
-              onZoomIn={contentZoom.zoomIn}
-              onZoomOut={contentZoom.zoomOut}
-              onReset={contentZoom.resetZoom}
+              controller={contentZoom}
               variant="hud"
             />
             <div className="flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 backdrop-blur-md px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-xs font-bold shadow-sm flex-shrink-0">
