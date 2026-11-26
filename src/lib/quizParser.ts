@@ -20,6 +20,8 @@
  *  - Point value per question = 100 / totalQuestions (distributed evenly).
  */
 
+import { iterateMarkdownLines, splitMarkdownByH2 } from "./markdownFence";
+
 export interface QuizOption {
   text: string;
   isCorrect: boolean;
@@ -41,7 +43,15 @@ export interface QuizQuestion {
  * (i.e., has at least one answer option line `* ... [*]` or `- ... [*]`).
  */
 export function hasQuizContent(content: string): boolean {
-  return /^[*-]\s+.+\[\*\]\s*$/m.test(content);
+  if (!content) return false;
+
+  for (const { line, inFence } of iterateMarkdownLines(content)) {
+    if (!inFence && /^[*-]\s+.+\[\*\]\s*$/.test(line)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -58,29 +68,26 @@ export function countQuizQuestions(content: string): number {
 export function parseQuiz(content: string): QuizQuestion[] {
   if (!content?.trim()) return [];
 
-  // Split content into question blocks using ## headings or --- separators.
+  // Split content into question blocks using ## headings outside fenced code blocks.
   // We keep the delimiter in the result so we can extract heading text.
-  const rawBlocks = content.split(/^(?=## )/m);
+  const rawBlocks = splitMarkdownByH2(content);
 
   const questions: QuizQuestion[] = [];
 
   for (const block of rawBlocks) {
-    const trimmed = block.trim();
-    if (!trimmed) continue;
+    if (!block.trim()) continue;
 
-    const lines = trimmed.split('\n');
-    
     let heading = '';
     const questionLines: string[] = [];
     const optionLines: string[] = [];
 
-    for (const line of lines) {
-      if (line.startsWith('## ')) {
+    for (const { rawLine, line, inFence } of iterateMarkdownLines(block)) {
+      if (!inFence && line.startsWith('## ')) {
         heading = line.replace(/^## /, '').trim();
-      } else if (/^[*-]\s+/.test(line)) {
+      } else if (!inFence && /^[*-]\s+/.test(line)) {
         optionLines.push(line);
       } else {
-        questionLines.push(line);
+        questionLines.push(rawLine);
       }
     }
 

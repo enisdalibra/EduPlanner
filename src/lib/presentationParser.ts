@@ -1,3 +1,4 @@
+import { splitMarkdownByH2 } from "./markdownFence";
 import { parseQuiz, type QuizQuestion } from "./quizParser";
 
 export interface MaterialSlide {
@@ -27,29 +28,29 @@ export function parsePresentation(content: string, docTitle: string): Presentati
   if (!content?.trim()) return [];
 
   const slides: PresentationSlide[] = [];
-  const parts = content.split(/^(?=## )/m);
+  const parts = splitMarkdownByH2(content);
   let questionIndex = 0;
 
   for (const part of parts) {
     const trimmed = part.trim();
     if (!trimmed) continue;
 
-    const parsedQuestions = parseQuiz(trimmed);
-    if (trimmed.startsWith("## ") && parsedQuestions.length === 1) {
-      const question = parsedQuestions[0];
-      slides.push({
-        kind: "quiz",
-        heading: question.heading,
-        body: question.questionMarkdown,
-        isCover: false,
-        question,
-        questionIndex,
-      });
-      questionIndex += 1;
-      continue;
-    }
-
     if (trimmed.startsWith("## ")) {
+      const parsedQuestions = parseQuiz(part);
+      if (parsedQuestions.length === 1) {
+        const question = parsedQuestions[0];
+        slides.push({
+          kind: "quiz",
+          heading: question.heading,
+          body: question.questionMarkdown,
+          isCover: false,
+          question,
+          questionIndex,
+        });
+        questionIndex += 1;
+        continue;
+      }
+
       const firstNewline = trimmed.indexOf("\n");
       const heading = firstNewline === -1
         ? trimmed.replace(/^## /, "").trim()
