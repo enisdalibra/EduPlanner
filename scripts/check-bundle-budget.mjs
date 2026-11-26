@@ -35,26 +35,31 @@ const lazySizes = await Promise.all(lazyFiles.map(async (file) => ({
 })));
 const largestLazy = lazySizes.sort((left, right) => right.size - left.size)[0];
 
+function assertLazyOnly(label, entries, minCount) {
+  if (entries.length < minCount) {
+    throw new Error(`${label} chunks were not emitted separately.`);
+  }
+  for (const [, entry] of entries) {
+    if (initialFiles.has(entry.file)) {
+      throw new Error(`${label} code leaked into initial JS: ${entry.file}`);
+    }
+  }
+}
+
 const excelEntries = Object.entries(manifest).filter(([key, entry]) =>
   key.includes('read-excel-file') ||
   key.includes('write-excel-file') ||
   entry.name === 'excel-reader' ||
   entry.name === 'excel-writer'
 );
-if (excelEntries.length < 2) throw new Error('Excel reader/writer chunks were not emitted separately.');
-for (const [, entry] of excelEntries) {
-  if (initialFiles.has(entry.file)) throw new Error(`Excel code leaked into initial JS: ${entry.file}`);
-}
+assertLazyOnly('Excel', excelEntries, 2);
 
 const mermaidEntries = Object.entries(manifest).filter(([key, entry]) =>
   key.includes('node_modules/mermaid') ||
   key.includes('node_modules/@mermaid-js') ||
   entry.file.includes('mermaid.core')
 );
-if (mermaidEntries.length === 0) throw new Error('Mermaid chunks were not emitted separately.');
-for (const [, entry] of mermaidEntries) {
-  if (initialFiles.has(entry.file)) throw new Error(`Mermaid code leaked into initial JS: ${entry.file}`);
-}
+assertLazyOnly('Mermaid', mermaidEntries, 1);
 
 async function precacheFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
