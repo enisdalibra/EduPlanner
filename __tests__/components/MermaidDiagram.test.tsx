@@ -320,6 +320,63 @@ describe('MermaidDiagram', () => {
     }
   });
 
+  it('shows inline bilingual copy error feedback when clipboard fails (even without Toaster)', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn().mockRejectedValue(new Error('Permission denied')) },
+    });
+
+    renderMermaidDiagramMock.mockResolvedValueOnce('<svg data-testid="err-copy-svg">Diagram</svg>');
+
+    render(<MermaidDiagram code="graph TD; A-->B" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('err-copy-svg')).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: dict.id.mermaid.copyCode }));
+    });
+
+    expect(toast.error).toHaveBeenCalledWith(dict.id.mermaid.copyError);
+    expect(screen.getByRole('button', { name: dict.id.mermaid.copyError })).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(dict.id.mermaid.copyError);
+  });
+
+  it('ignores modified zoom shortcuts (Ctrl/Meta) and isolates inner keydowns from window', async () => {
+    renderMermaidDiagramMock.mockResolvedValueOnce('<svg data-testid="mod-svg">Diagram</svg>');
+
+    const parentKeySpy = vi.fn();
+    window.addEventListener('keydown', parentKeySpy);
+
+    try {
+      render(<MermaidDiagram code="graph TD; A-->B" presentationMode />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mod-svg')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: dict.id.mermaid.expandDiagram }));
+      const dialog = screen.getByRole('dialog');
+
+      // Browser zoom combos (Ctrl++ / Meta+0) must NOT change lightbox zoom
+      fireEvent.keyDown(window, { key: '+', ctrlKey: true });
+      fireEvent.keyDown(window, { key: '-', metaKey: true });
+      expect(screen.getByTestId('mermaid-zoom-level')).toHaveTextContent('100%');
+
+      // Unmodified '+' zooms in
+      fireEvent.keyDown(window, { key: '+' });
+      expect(screen.getByTestId('mermaid-zoom-level')).toHaveTextContent('125%');
+
+      // Keydowns inside the dialog (e.g. ArrowRight in PresentationView) must not leak to window
+      parentKeySpy.mockClear();
+      fireEvent.keyDown(dialog, { key: 'ArrowRight' });
+      expect(parentKeySpy).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener('keydown', parentKeySpy);
+    }
+  });
+
   it('mentions mermaid code block support in both ID and EN Markdown editor placeholders', () => {
     expect(dict.id.notesPage.placeholderContent).toContain('mermaid');
     expect(dict.id.materialsPage.placeholderContent).toContain('mermaid');

@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Icon } from '@/components/ui/icon';
-import { MermaidLightbox } from '@/components/ui/MermaidLightbox';
+import {
+  MermaidCopyButton,
+  MermaidLightbox,
+  type MermaidCopyStatus,
+} from '@/components/ui/MermaidLightbox';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getCachedMermaidSvg, renderMermaidDiagram } from '@/lib/mermaidRenderer';
 import { cn } from '@/lib/utils';
@@ -73,7 +77,7 @@ export function MermaidDiagram({
   const prevCodeRef = useRef(trimmedCode);
   const copyTimerRef = useRef<number | null>(null);
 
-  const [copied, setCopied] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<MermaidCopyStatus>('idle');
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   useEffect(() => {
@@ -84,22 +88,28 @@ export function MermaidDiagram({
     };
   }, []);
 
+  const scheduleCopyReset = useCallback(() => {
+    if (copyTimerRef.current !== null) {
+      window.clearTimeout(copyTimerRef.current);
+    }
+    copyTimerRef.current = window.setTimeout(() => {
+      setCopyStatus('idle');
+      copyTimerRef.current = null;
+    }, COPY_FEEDBACK_MS);
+  }, []);
+
   const handleCopyCode = useCallback(async () => {
     try {
       await copyTextToClipboard(code);
-      setCopied(true);
+      setCopyStatus('copied');
       toast.success(t('mermaid.copySuccess'));
-      if (copyTimerRef.current !== null) {
-        window.clearTimeout(copyTimerRef.current);
-      }
-      copyTimerRef.current = window.setTimeout(() => {
-        setCopied(false);
-        copyTimerRef.current = null;
-      }, COPY_FEEDBACK_MS);
+      scheduleCopyReset();
     } catch {
+      setCopyStatus('error');
       toast.error(t('mermaid.copyError'));
+      scheduleCopyReset();
     }
-  }, [code, t]);
+  }, [code, scheduleCopyReset, t]);
 
   const handleCloseLightbox = useCallback(() => {
     setIsLightboxOpen(false);
@@ -293,27 +303,12 @@ export function MermaidDiagram({
             actionToolbarTone,
           )}
         >
-          <button
-            type="button"
+          <MermaidCopyButton
+            status={copyStatus}
+            isDark={isDark}
             onClick={handleCopyCode}
-            aria-label={copied ? t('mermaid.copied') : t('mermaid.copyCode')}
-            title={copied ? t('mermaid.copied') : t('mermaid.copyCode')}
-            className={cn(
-              'inline-flex h-7 items-center gap-1 rounded-lg px-2 text-xs font-medium transition-colors',
-              copied
-                ? isDark
-                  ? 'bg-emerald-500/20 text-emerald-300'
-                  : 'bg-emerald-50 text-emerald-700'
-                : actionBtnHover,
-            )}
-          >
-            <Icon
-              name={copied ? 'check' : 'content_copy'}
-              className="w-3.5 h-3.5"
-              aria-hidden="true"
-            />
-            {copied && <span className="text-[11px]">{t('mermaid.copied')}</span>}
-          </button>
+            size="sm"
+          />
 
           <button
             type="button"
@@ -329,6 +324,12 @@ export function MermaidDiagram({
           </button>
         </div>
 
+        {copyStatus !== 'idle' && (
+          <span role="status" aria-live="polite" className="sr-only">
+            {copyStatus === 'copied' ? t('mermaid.copySuccess') : t('mermaid.copyError')}
+          </span>
+        )}
+
         <div
           className="flex justify-center"
           // SVG is sanitized by Mermaid with securityLevel: 'strict' (DOMPurify).
@@ -340,7 +341,7 @@ export function MermaidDiagram({
         <MermaidLightbox
           svg={lightboxSvg}
           isDark={isDark}
-          copied={copied}
+          copyStatus={copyStatus}
           onCopy={handleCopyCode}
           onClose={handleCloseLightbox}
         />

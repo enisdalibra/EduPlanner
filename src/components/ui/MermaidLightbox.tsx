@@ -3,13 +3,81 @@ import { Icon } from '@/components/ui/icon';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
+export type MermaidCopyStatus = 'idle' | 'copied' | 'error';
+
+export interface MermaidCopyButtonProps {
+  status: MermaidCopyStatus;
+  isDark?: boolean;
+  onClick: () => void;
+  size?: 'sm' | 'md';
+  showIdleLabel?: boolean;
+}
+
+export function MermaidCopyButton({
+  status,
+  isDark = false,
+  onClick,
+  size = 'sm',
+  showIdleLabel = false,
+}: MermaidCopyButtonProps) {
+  const { t } = useTranslation();
+
+  const label =
+    status === 'copied'
+      ? t('mermaid.copied')
+      : status === 'error'
+        ? t('mermaid.copyError')
+        : t('mermaid.copyCode');
+
+  const iconName =
+    status === 'copied' ? 'check' : status === 'error' ? 'error' : 'content_copy';
+
+  const toneClass =
+    status === 'copied'
+      ? isDark
+        ? 'bg-emerald-500/20 text-emerald-300'
+        : 'bg-emerald-50 text-emerald-700'
+      : status === 'error'
+        ? isDark
+          ? 'bg-rose-500/20 text-rose-300'
+          : 'bg-rose-50 text-rose-700'
+        : isDark
+          ? 'text-gray-200 hover:bg-white/10 hover:text-white active:bg-white/15'
+          : 'text-gray-700 hover:bg-gray-200/70 hover:text-gray-900 active:bg-gray-200';
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={cn(
+        'inline-flex items-center rounded-lg font-medium transition-colors',
+        size === 'sm' ? 'h-7 gap-1 px-2 text-xs' : 'h-8 gap-1.5 rounded-xl px-2.5 text-xs',
+        toneClass,
+      )}
+    >
+      <Icon
+        name={iconName}
+        className={size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4'}
+        aria-hidden="true"
+      />
+      {status !== 'idle' ? (
+        <span className={size === 'sm' ? 'text-[11px]' : undefined}>{label}</span>
+      ) : (
+        showIdleLabel && <span className="hidden sm:inline">{label}</span>
+      )}
+    </button>
+  );
+}
+
 export interface MermaidLightboxProps {
   /** Sanitized Mermaid SVG markup to inspect. */
   svg: string;
   /** Effective dark theme (supports independent PresentationView theme). */
   isDark?: boolean;
-  /** Whether the source code was just copied. */
-  copied?: boolean;
+  /** Current copy feedback state. */
+  copyStatus?: MermaidCopyStatus;
   /** Callback to copy the raw Mermaid source code. */
   onCopy: () => void;
   /** Callback to close the lightbox. */
@@ -28,13 +96,14 @@ function clampZoom(value: number): number {
 export function MermaidLightbox({
   svg,
   isDark = false,
-  copied = false,
+  copyStatus = 'idle',
   onCopy,
   onClose,
 }: MermaidLightboxProps) {
   const { t } = useTranslation();
   const titleId = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
 
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -62,7 +131,7 @@ export function MermaidLightbox({
     setPan({ x: 0, y: 0 });
   }, []);
 
-  // Open native modal <dialog> (with jsdom fallback) and configure light-dismiss
+  // Open native modal <dialog> (with jsdom fallback) and keep inner keydowns isolated
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -77,7 +146,15 @@ export function MermaidLightbox({
       }
     }
 
+    // Prevent keydowns originating inside the dialog (e.g. Arrow keys, Space)
+    // from bubbling out to window listeners in PresentationView or QuizView.
+    const stopKeyLeak = (e: KeyboardEvent) => {
+      e.stopPropagation();
+    };
+    dialog.addEventListener('keydown', stopKeyLeak);
+
     return () => {
+      dialog.removeEventListener('keydown', stopKeyLeak);
       if (dialog.open) {
         if (typeof dialog.close === 'function') {
           dialog.close();
@@ -88,6 +165,25 @@ export function MermaidLightbox({
     };
   }, []);
 
+  // Non-passive wheel listener so preventDefault() blocks scroll without browser warnings
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY === 0) return;
+      e.preventDefault();
+      if (e.deltaY < 0) {
+        zoomIn();
+      } else {
+        zoomOut();
+      }
+    };
+
+    stage.addEventListener('wheel', handleWheel, { passive: false });
+    return () => stage.removeEventListener('wheel', handleWheel);
+  }, [zoomIn, zoomOut]);
+
   // Capture-phase keyboard handler: ensures Escape only closes the lightbox
   // without triggering window bubble listeners in PresentationView or MaterialEditView.
   useEffect(() => {
@@ -97,6 +193,10 @@ export function MermaidLightbox({
         e.stopPropagation();
         e.stopImmediatePropagation();
         onClose();
+        return;
+      }
+
+      if (e.ctrlKey || e.metaKey || e.altKey) {
         return;
       }
 
@@ -180,16 +280,6 @@ export function MermaidLightbox({
     setIsDragging(false);
     if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId);
-    }
-  };
-
-  const handleStageWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (e.deltaY === 0) return;
-    e.preventDefault();
-    if (e.deltaY < 0) {
-      zoomIn();
-    } else {
-      zoomOut();
     }
   };
 
@@ -287,29 +377,13 @@ export function MermaidLightbox({
             aria-hidden="true"
           />
 
-          <button
-            type="button"
+          <MermaidCopyButton
+            status={copyStatus}
+            isDark={isDark}
             onClick={onCopy}
-            aria-label={copied ? t('mermaid.copied') : t('mermaid.copyCode')}
-            title={copied ? t('mermaid.copied') : t('mermaid.copyCode')}
-            className={cn(
-              'inline-flex h-8 items-center gap-1.5 rounded-xl px-2.5 text-xs font-medium transition-colors',
-              copied
-                ? isDark
-                  ? 'bg-emerald-500/20 text-emerald-300'
-                  : 'bg-emerald-50 text-emerald-700'
-                : btnTone,
-            )}
-          >
-            <Icon
-              name={copied ? 'check' : 'content_copy'}
-              className="w-4 h-4"
-              aria-hidden="true"
-            />
-            <span className="hidden sm:inline">
-              {copied ? t('mermaid.copied') : t('mermaid.copyCode')}
-            </span>
-          </button>
+            size="md"
+            showIdleLabel
+          />
 
           <button
             type="button"
@@ -329,12 +403,12 @@ export function MermaidLightbox({
 
       {/* Interactive Zoom & Pan Stage */}
       <div
+        ref={stageRef}
         data-testid="mermaid-lightbox-stage"
         onPointerDown={handleStagePointerDown}
         onPointerMove={handleStagePointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
-        onWheel={handleStageWheel}
         onDoubleClick={resetView}
         className={cn(
           'mermaid-lightbox-stage relative flex flex-1 items-center justify-center overflow-hidden p-6 touch-none select-none',

@@ -305,10 +305,6 @@
   display: block;
 }
 
-.mermaid-diagram--presentation {
-  max-height: 55vh;
-}
-
 .mermaid-diagram--presentation svg {
   max-height: calc(55vh - 2rem);
   max-width: 100%;
