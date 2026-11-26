@@ -36,6 +36,7 @@ export function MaterialReadView() {
   // Keyboard: Esc → back
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || document.querySelector("dialog[open]")) return;
       if (e.key === "Escape") navigate("/materials");
     };
     window.addEventListener("keydown", handler);

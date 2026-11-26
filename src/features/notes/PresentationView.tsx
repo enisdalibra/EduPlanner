@@ -88,6 +88,7 @@ export function PresentationView() {
   // Keyboard navigation
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || document.querySelector('dialog[open]')) return;
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
         e.preventDefault(); goNext();
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {

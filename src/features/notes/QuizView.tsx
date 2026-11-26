@@ -186,7 +186,7 @@ export function QuizView() {
 
   // Keyboard navigation
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (showResults) return;
+    if (showResults || e.defaultPrevented || document.querySelector('dialog[open]')) return;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goNext();
     if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goPrev();
     if (e.key === 'Escape') navigate('/evaluations');

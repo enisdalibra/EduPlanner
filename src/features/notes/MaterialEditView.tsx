@@ -132,6 +132,7 @@ export function MaterialEditView() {
   // ── Keyboard shortcuts ──────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || document.querySelector("dialog[open]")) return;
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         handleSave();
@@ -372,6 +373,8 @@ export function MaterialEditView() {
           <code className="opacity-80">$E=mc^2$</code>
           <span className="opacity-50 mx-1">-</span>
           <code className="opacity-80">$$x=\frac{'{'}a{'}'}{'{'}b{'}'}$$</code>
+          <span className="opacity-50 mx-1">-</span>
+          <code className="opacity-80">```mermaid</code>
         </div>
 
         {/* Right: shortcuts + word count */}

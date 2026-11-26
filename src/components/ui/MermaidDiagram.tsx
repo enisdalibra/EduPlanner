@@ -1,5 +1,7 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { Icon } from '@/components/ui/icon';
+import { MermaidLightbox } from '@/components/ui/MermaidLightbox';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getCachedMermaidSvg, renderMermaidDiagram } from '@/lib/mermaidRenderer';
 import { cn } from '@/lib/utils';
@@ -23,6 +25,29 @@ interface DiagramState {
 }
 
 const DEFAULT_DEBOUNCE_MS = 250;
+const COPY_FEEDBACK_MS = 2000;
+
+async function copyTextToClipboard(text: string): Promise<void> {
+  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  if (typeof document !== 'undefined') {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const ok = document.execCommand?.('copy') ?? false;
+    textarea.remove();
+    if (ok) return;
+  }
+
+  throw new Error('Clipboard API unavailable');
+}
 
 export function MermaidDiagram({
   code,
@@ -46,6 +71,39 @@ export function MermaidDiagram({
 
   const hasMountedRef = useRef(false);
   const prevCodeRef = useRef(trimmedCode);
+  const copyTimerRef = useRef<number | null>(null);
+
+  const [copied, setCopied] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleCopyCode = useCallback(async () => {
+    try {
+      await copyTextToClipboard(code);
+      setCopied(true);
+      toast.success(t('mermaid.copySuccess'));
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current);
+      }
+      copyTimerRef.current = window.setTimeout(() => {
+        setCopied(false);
+        copyTimerRef.current = null;
+      }, COPY_FEEDBACK_MS);
+    } catch {
+      toast.error(t('mermaid.copyError'));
+    }
+  }, [code, t]);
+
+  const handleCloseLightbox = useCallback(() => {
+    setIsLightboxOpen(false);
+  }, []);
 
   useEffect(() => {
     const codeChanged = prevCodeRef.current !== trimmedCode;
@@ -206,22 +264,87 @@ export function MermaidDiagram({
     );
   }
 
+  const actionToolbarTone = isDark
+    ? 'bg-gray-900/80 border-gray-700/80 text-gray-200'
+    : 'bg-white/90 border-gray-200/90 text-gray-600';
+  const actionBtnHover = isDark
+    ? 'hover:bg-white/10 hover:text-white'
+    : 'hover:bg-gray-100 hover:text-gray-900';
+
+  const lightboxSvg = isLightboxOpen
+    ? (getCachedMermaidSvg(trimmedCode, isDark, `${instanceId}-lightbox`) ?? state.svg)
+    : null;
+
   return (
-    <figure
-      aria-label={t('mermaid.diagramLabel')}
-      data-mermaid-state={state.isRendering ? 'updating' : 'rendered'}
-      className={cn(
-        'not-prose mermaid-diagram my-4 overflow-x-auto rounded-2xl border p-4 shadow-sm transition-opacity duration-150',
-        containerTone,
-        presentationMode && 'max-h-[55vh] overflow-y-auto [&_svg]:max-h-[50vh]',
-        state.isRendering && 'opacity-80',
+    <>
+      <figure
+        aria-label={t('mermaid.diagramLabel')}
+        data-mermaid-state={state.isRendering ? 'updating' : 'rendered'}
+        className={cn(
+          'not-prose mermaid-diagram relative my-4 overflow-x-auto rounded-2xl border p-4 shadow-sm transition-opacity duration-150',
+          containerTone,
+          presentationMode && 'mermaid-diagram--presentation max-h-[55vh] overflow-y-auto',
+          state.isRendering && 'opacity-80',
+        )}
+      >
+        <div
+          className={cn(
+            'absolute top-2.5 right-2.5 z-10 flex items-center gap-0.5 rounded-xl border p-1 shadow-xs backdrop-blur-sm transition-opacity duration-150 opacity-85 hover:opacity-100 focus-within:opacity-100',
+            actionToolbarTone,
+          )}
+        >
+          <button
+            type="button"
+            onClick={handleCopyCode}
+            aria-label={copied ? t('mermaid.copied') : t('mermaid.copyCode')}
+            title={copied ? t('mermaid.copied') : t('mermaid.copyCode')}
+            className={cn(
+              'inline-flex h-7 items-center gap-1 rounded-lg px-2 text-xs font-medium transition-colors',
+              copied
+                ? isDark
+                  ? 'bg-emerald-500/20 text-emerald-300'
+                  : 'bg-emerald-50 text-emerald-700'
+                : actionBtnHover,
+            )}
+          >
+            <Icon
+              name={copied ? 'check' : 'content_copy'}
+              className="w-3.5 h-3.5"
+              aria-hidden="true"
+            />
+            {copied && <span className="text-[11px]">{t('mermaid.copied')}</span>}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsLightboxOpen(true)}
+            aria-label={t('mermaid.expandDiagram')}
+            title={t('mermaid.expandDiagram')}
+            className={cn(
+              'inline-flex h-7 w-7 items-center justify-center rounded-lg transition-colors',
+              actionBtnHover,
+            )}
+          >
+            <Icon name="open_in_full" className="w-3.5 h-3.5" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div
+          className="flex justify-center"
+          // SVG is sanitized by Mermaid with securityLevel: 'strict' (DOMPurify).
+          dangerouslySetInnerHTML={{ __html: state.svg }}
+        />
+      </figure>
+
+      {isLightboxOpen && lightboxSvg && (
+        <MermaidLightbox
+          svg={lightboxSvg}
+          isDark={isDark}
+          copied={copied}
+          onCopy={handleCopyCode}
+          onClose={handleCloseLightbox}
+        />
       )}
-    >
-      <div
-        className="flex justify-center"
-        // SVG is sanitized by Mermaid with securityLevel: 'strict' (DOMPurify).
-        dangerouslySetInnerHTML={{ __html: state.svg }}
-      />
-    </figure>
+    </>
   );
 }
