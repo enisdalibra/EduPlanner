@@ -33,7 +33,11 @@ describe('MermaidDiagram', () => {
     const { container } = render(<MermaidDiagram code={'graph TD\n  A --> B'} />);
 
     expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(renderMermaidDiagramMock).toHaveBeenCalledWith('graph TD\n  A --> B', false);
+    expect(renderMermaidDiagramMock).toHaveBeenCalledWith(
+      'graph TD\n  A --> B',
+      false,
+      expect.any(String),
+    );
 
     await act(async () => {
       resolveRender('<svg data-testid="rendered-svg"><g>Diagram</g></svg>');
@@ -65,8 +69,18 @@ describe('MermaidDiagram', () => {
       expect(screen.getByTestId('dark-svg')).toBeInTheDocument();
     });
 
-    expect(renderMermaidDiagramMock).toHaveBeenNthCalledWith(1, 'graph LR; A-->B', false);
-    expect(renderMermaidDiagramMock).toHaveBeenNthCalledWith(2, 'graph LR; A-->B', true);
+    expect(renderMermaidDiagramMock).toHaveBeenNthCalledWith(
+      1,
+      'graph LR; A-->B',
+      false,
+      expect.any(String),
+    );
+    expect(renderMermaidDiagramMock).toHaveBeenNthCalledWith(
+      2,
+      'graph LR; A-->B',
+      true,
+      expect.any(String),
+    );
   });
 
   it('debounces live code edits while keeping the previous SVG visible to avoid flicker', async () => {
@@ -102,7 +116,11 @@ describe('MermaidDiagram', () => {
     });
 
     expect(renderMermaidDiagramMock).toHaveBeenCalledTimes(2);
-    expect(renderMermaidDiagramMock).toHaveBeenLastCalledWith('graph TD; A-->B; B-->C', false);
+    expect(renderMermaidDiagramMock).toHaveBeenLastCalledWith(
+      'graph TD; A-->B; B-->C',
+      false,
+      expect.any(String),
+    );
     expect(screen.getByTestId('svg-v2')).toBeInTheDocument();
   });
 
@@ -119,6 +137,20 @@ describe('MermaidDiagram', () => {
     expect(screen.getByText('Parse error on line 2')).toBeInTheDocument();
     const fallbackCode = container.querySelector('pre code');
     expect(fallbackCode?.textContent).toBe(invalidCode);
+  });
+
+  it('omits raw detail box when error has no message while keeping localized alert card', async () => {
+    renderMermaidDiagramMock.mockRejectedValueOnce(new Error(''));
+
+    const invalidCode = 'graph TD\n  A -->';
+    const { container } = render(<MermaidDiagram code={invalidCode} isDark={false} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText(/Failed to render/i)).toBeNull();
+    expect(container.querySelector('pre code')?.textContent).toBe(invalidCode);
   });
 
   it('shows an inline warning card for empty Mermaid blocks without invoking the renderer', () => {

@@ -403,7 +403,7 @@ export function QuizView() {
 
           {/* Question text */}
           <div className="panel-lg !p-5 md:!p-7 rounded-2xl shadow-sm border border-gray-200/80 dark:border-gray-700/80">
-            <div className="prose prose-lg md:prose-xl dark:prose-invert max-w-none [&_p]:font-bold [&_p]:text-xl md:[&_p]:text-2xl [&_p]:leading-relaxed [&_p]:text-text dark:[&_p]:text-white">
+            <div className="prose prose-lg md:prose-xl dark:prose-invert max-w-none [&_p:not(.not-prose_p)]:font-bold [&_p:not(.not-prose_p)]:text-xl md:[&_p:not(.not-prose_p)]:text-2xl [&_p:not(.not-prose_p)]:leading-relaxed [&_p:not(.not-prose_p)]:text-text dark:[&_p:not(.not-prose_p)]:text-white">
               <MarkdownRenderer>
                 {question.questionMarkdown || question.heading}
               </MarkdownRenderer>

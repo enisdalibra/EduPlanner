@@ -42,18 +42,22 @@ describe('mermaidRenderer', () => {
     expect(dark.themeVariables?.textColor).toBe('#f9fafb');
   });
 
-  it('renders SVG with initialized theme config and caches by theme + source', async () => {
+  it('renders SVG with initialized theme config, caches by theme + source, and scopes DOM IDs per instance', async () => {
     const { getCachedMermaidSvg, renderMermaidDiagram } = await import('@/lib/mermaidRenderer');
 
-    renderMock.mockResolvedValueOnce({ svg: '<svg data-theme="light">A</svg>' });
-    renderMock.mockResolvedValueOnce({ svg: '<svg data-theme="dark">A</svg>' });
+    renderMock.mockImplementationOnce(async (id: string) => ({
+      svg: `<svg id="${id}" data-theme="light"><style>#${id} .node{}</style></svg>`,
+    }));
+    renderMock.mockImplementationOnce(async (id: string) => ({
+      svg: `<svg id="${id}" data-theme="dark"><style>#${id} .node{}</style></svg>`,
+    }));
 
     const code = 'graph TD\n  A --> B';
 
-    expect(getCachedMermaidSvg(code, false)).toBeNull();
+    expect(getCachedMermaidSvg(code, false, 'inst-a')).toBeNull();
 
-    const lightSvg = await renderMermaidDiagram(code, false);
-    expect(lightSvg).toBe('<svg data-theme="light">A</svg>');
+    const lightSvgA = await renderMermaidDiagram(code, false, 'inst-a');
+    expect(lightSvgA).toContain('id="eduplanner-mermaid-inst-a"');
     expect(initializeMock).toHaveBeenCalledTimes(1);
     expect(initializeMock).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -63,15 +67,17 @@ describe('mermaidRenderer', () => {
       }),
     );
 
-    // Subsequent call with same code & theme hits cache without re-invoking mermaid.render
-    const cachedLight = await renderMermaidDiagram(`  ${code}  `, false);
-    expect(cachedLight).toBe(lightSvg);
+    // Subsequent call with same code & theme hits cache but rewrites DOM IDs for a second instance
+    const lightSvgB = await renderMermaidDiagram(`  ${code}  `, false, 'inst-b');
     expect(renderMock).toHaveBeenCalledTimes(1);
-    expect(getCachedMermaidSvg(code, false)).toBe(lightSvg);
+    expect(lightSvgB).toContain('id="eduplanner-mermaid-inst-b"');
+    expect(lightSvgB).toContain('#eduplanner-mermaid-inst-b .node{}');
+    expect(lightSvgB).not.toContain('eduplanner-mermaid-inst-a');
+    expect(getCachedMermaidSvg(code, false, 'inst-c')).toContain('id="eduplanner-mermaid-inst-c"');
 
     // Dark theme uses separate cache entry and re-initializes with dark palette
-    const darkSvg = await renderMermaidDiagram(code, true);
-    expect(darkSvg).toBe('<svg data-theme="dark">A</svg>');
+    const darkSvg = await renderMermaidDiagram(code, true, 'inst-a');
+    expect(darkSvg).toContain('data-theme="dark"');
     expect(renderMock).toHaveBeenCalledTimes(2);
     expect(initializeMock).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -140,10 +146,13 @@ describe('mermaidRenderer', () => {
     expect(document.querySelector('[id^="deduplanner-mermaid-"]')).toBeNull();
   });
 
-  it('rejects empty source without calling mermaid', async () => {
+  it('rejects empty source without calling mermaid and avoids hardcoded fallback English errors', async () => {
     const { renderMermaidDiagram } = await import('@/lib/mermaidRenderer');
 
-    await expect(renderMermaidDiagram('   \n  ', false)).rejects.toThrow(/empty/i);
+    await expect(renderMermaidDiagram('   \n  ', false)).rejects.toThrow('');
     expect(renderMock).not.toHaveBeenCalled();
+
+    renderMock.mockRejectedValueOnce('non-error-throw');
+    await expect(renderMermaidDiagram('graph TD; X-->Y', false)).rejects.toThrow(/^$/);
   });
 });

@@ -280,4 +280,41 @@ describe('MarkdownRenderer', () => {
       renderSpy.mockRestore();
     }
   });
+
+  it('keeps MermaidDiagram mounted without loading flash when toggling theme', async () => {
+    let resolveDark!: (svg: string) => void;
+    const renderSpy = vi
+      .spyOn(mermaidRenderer, 'renderMermaidDiagram')
+      .mockResolvedValueOnce('<svg data-testid="light-mermaid">Light</svg>')
+      .mockImplementationOnce(
+        () =>
+          new Promise<string>((resolve) => {
+            resolveDark = resolve;
+          }),
+      );
+
+    try {
+      const markdown = '```mermaid\ngraph TD\n  A --> B\n```';
+      const { rerender } = render(<MarkdownRenderer isDark={false}>{markdown}</MarkdownRenderer>);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('light-mermaid')).toBeInTheDocument();
+      });
+
+      // Toggle theme to dark: previous SVG stays visible while dark version renders (no status skeleton)
+      rerender(<MarkdownRenderer isDark={true}>{markdown}</MarkdownRenderer>);
+      expect(screen.getByTestId('light-mermaid')).toBeInTheDocument();
+      expect(screen.queryByRole('status')).toBeNull();
+
+      await act(async () => {
+        resolveDark('<svg data-testid="dark-mermaid">Dark</svg>');
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('dark-mermaid')).toBeInTheDocument();
+      });
+    } finally {
+      renderSpy.mockRestore();
+    }
+  });
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { Icon } from '@/components/ui/icon';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getCachedMermaidSvg, renderMermaidDiagram } from '@/lib/mermaidRenderer';
@@ -15,6 +15,13 @@ export interface MermaidDiagramProps {
   debounceMs?: number;
 }
 
+interface DiagramState {
+  svg: string | null;
+  hasError: boolean;
+  errorDetail: string | null;
+  isRendering: boolean;
+}
+
 const DEFAULT_DEBOUNCE_MS = 250;
 
 export function MermaidDiagram({
@@ -24,15 +31,18 @@ export function MermaidDiagram({
   debounceMs = DEFAULT_DEBOUNCE_MS,
 }: MermaidDiagramProps) {
   const { t } = useTranslation();
+  const instanceId = useId();
   const trimmedCode = code.trim();
 
-  const [svg, setSvg] = useState<string | null>(() =>
-    trimmedCode ? getCachedMermaidSvg(trimmedCode, isDark) : null,
-  );
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isRendering, setIsRendering] = useState<boolean>(() =>
-    Boolean(trimmedCode && !getCachedMermaidSvg(trimmedCode, isDark)),
-  );
+  const [state, setState] = useState<DiagramState>(() => {
+    const initialSvg = trimmedCode ? getCachedMermaidSvg(trimmedCode, isDark, instanceId) : null;
+    return {
+      svg: initialSvg,
+      hasError: false,
+      errorDetail: null,
+      isRendering: Boolean(trimmedCode && !initialSvg),
+    };
+  });
 
   const hasMountedRef = useRef(false);
   const prevCodeRef = useRef(trimmedCode);
@@ -44,36 +54,49 @@ export function MermaidDiagram({
     prevCodeRef.current = trimmedCode;
 
     if (!trimmedCode) {
-      setSvg(null);
-      setErrorMessage(null);
-      setIsRendering(false);
+      setState({
+        svg: null,
+        hasError: false,
+        errorDetail: null,
+        isRendering: false,
+      });
       return;
     }
 
-    const cached = getCachedMermaidSvg(trimmedCode, isDark);
+    const cached = getCachedMermaidSvg(trimmedCode, isDark, instanceId);
     if (cached) {
-      setSvg(cached);
-      setErrorMessage(null);
-      setIsRendering(false);
+      setState({
+        svg: cached,
+        hasError: false,
+        errorDetail: null,
+        isRendering: false,
+      });
       return;
     }
 
     let cancelled = false;
-    setIsRendering(true);
+    setState((prev) => ({ ...prev, isRendering: true }));
 
     const executeRender = () => {
-      renderMermaidDiagram(trimmedCode, isDark)
+      renderMermaidDiagram(trimmedCode, isDark, instanceId)
         .then((renderedSvg) => {
           if (cancelled) return;
-          setSvg(renderedSvg);
-          setErrorMessage(null);
-          setIsRendering(false);
+          setState({
+            svg: renderedSvg,
+            hasError: false,
+            errorDetail: null,
+            isRendering: false,
+          });
         })
         .catch((err: unknown) => {
           if (cancelled) return;
-          const message = err instanceof Error ? err.message : String(err);
-          setErrorMessage(message);
-          setIsRendering(false);
+          const detail = err instanceof Error ? err.message.trim() : '';
+          setState((prev) => ({
+            ...prev,
+            hasError: true,
+            errorDetail: detail || null,
+            isRendering: false,
+          }));
         });
     };
 
@@ -91,9 +114,9 @@ export function MermaidDiagram({
     return () => {
       cancelled = true;
     };
-  }, [trimmedCode, isDark, debounceMs]);
+  }, [trimmedCode, isDark, debounceMs, instanceId]);
 
-  if (!trimmedCode || errorMessage) {
+  if (!trimmedCode || state.hasError) {
     const cardTone = isDark
       ? 'bg-amber-950/35 border-amber-500/40 text-amber-100'
       : 'bg-amber-50/90 border-amber-300/80 text-amber-950';
@@ -125,25 +148,25 @@ export function MermaidDiagram({
           />
           <div className="min-w-0 flex-1 space-y-2">
             <div>
-              <p className="text-sm font-semibold leading-snug">
+              <div className="text-sm font-semibold leading-snug">
                 {!trimmedCode ? t('mermaid.emptyCode') : t('mermaid.errorTitle')}
-              </p>
+              </div>
               {trimmedCode && (
-                <p className={cn('mt-0.5 text-xs leading-relaxed', subtleText)}>
+                <div className={cn('mt-0.5 text-xs leading-relaxed', subtleText)}>
                   {t('mermaid.errorHint')}
-                </p>
+                </div>
               )}
             </div>
 
-            {errorMessage && (
-              <p
+            {state.errorDetail && (
+              <div
                 className={cn(
                   'rounded-xl border px-3 py-2 font-mono text-xs leading-relaxed break-words',
                   detailTone,
                 )}
               >
-                {errorMessage}
-              </p>
+                {state.errorDetail}
+              </div>
             )}
 
             {code.length > 0 && (
@@ -166,7 +189,7 @@ export function MermaidDiagram({
     ? 'bg-gray-800/60 border-gray-700/80'
     : 'bg-white border-gray-200/80';
 
-  if (!svg) {
+  if (!state.svg) {
     return (
       <div
         role="status"
@@ -186,18 +209,18 @@ export function MermaidDiagram({
   return (
     <figure
       aria-label={t('mermaid.diagramLabel')}
-      data-mermaid-state={isRendering ? 'updating' : 'rendered'}
+      data-mermaid-state={state.isRendering ? 'updating' : 'rendered'}
       className={cn(
         'not-prose mermaid-diagram my-4 overflow-x-auto rounded-2xl border p-4 shadow-sm transition-opacity duration-150',
         containerTone,
         presentationMode && 'max-h-[55vh] overflow-y-auto [&_svg]:max-h-[50vh]',
-        isRendering && 'opacity-80',
+        state.isRendering && 'opacity-80',
       )}
     >
       <div
         className="flex justify-center"
         // SVG is sanitized by Mermaid with securityLevel: 'strict' (DOMPurify).
-        dangerouslySetInnerHTML={{ __html: svg }}
+        dangerouslySetInnerHTML={{ __html: state.svg }}
       />
     </figure>
   );

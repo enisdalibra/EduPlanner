@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import ReactMarkdown, { type Components } from 'react-markdown';
+import React, { createContext, useContext, useMemo } from 'react';
+import ReactMarkdown, { type Components, type ExtraProps } from 'react-markdown';
 import { MarkdownImage } from '@/components/ui/MarkdownImage';
 import { MermaidDiagram } from '@/components/ui/MermaidDiagram';
 import { useIsDark } from '@/hooks/useTheme';
@@ -8,6 +8,18 @@ import { preprocessMarkdown } from '@/lib/preprocessMarkdown';
 import { cn } from '@/lib/utils';
 
 const MERMAID_LANG_RE = /(?:^|\s)language-mermaid(?:\s|$)/i;
+
+interface MarkdownRenderContextValue {
+  isDark: boolean;
+  presentationMode: boolean;
+  inline: boolean;
+}
+
+const MarkdownRenderContext = createContext<MarkdownRenderContextValue>({
+  isDark: false,
+  presentationMode: false,
+  inline: false,
+});
 
 function extractTextContent(node: React.ReactNode): string {
   if (typeof node === 'string' || typeof node === 'number') {
@@ -35,6 +47,63 @@ function extractMermaidCode(preChildren: React.ReactNode): string | null {
 
   return extractTextContent(onlyChild.props.children).replace(/\n$/, '');
 }
+
+function MarkdownParagraph({
+  node,
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLParagraphElement> & ExtraProps) {
+  const { inline } = useContext(MarkdownRenderContext);
+  if (inline) {
+    return <span className="inline">{children}</span>;
+  }
+  const onlyImage =
+    node?.children?.length === 1 &&
+    node.children[0].type === 'element' &&
+    (node.children[0] as { tagName?: string }).tagName === 'img';
+  return onlyImage ? <>{children}</> : <p {...props}>{children}</p>;
+}
+
+function MarkdownImg({
+  src,
+  alt,
+}: React.ImgHTMLAttributes<HTMLImageElement> & ExtraProps) {
+  const { isDark, presentationMode } = useContext(MarkdownRenderContext);
+  return (
+    <MarkdownImage
+      src={src}
+      alt={alt}
+      isDark={isDark}
+      presentationMode={presentationMode}
+    />
+  );
+}
+
+function MarkdownPre({
+  children,
+  ...props
+}: React.HTMLAttributes<HTMLPreElement> & ExtraProps) {
+  const { isDark, presentationMode, inline } = useContext(MarkdownRenderContext);
+  if (!inline) {
+    const mermaidCode = extractMermaidCode(children);
+    if (mermaidCode !== null) {
+      return (
+        <MermaidDiagram
+          code={mermaidCode}
+          isDark={isDark}
+          presentationMode={presentationMode}
+        />
+      );
+    }
+  }
+  return <pre {...props}>{children}</pre>;
+}
+
+const DEFAULT_MARKDOWN_COMPONENTS: Components = {
+  p: MarkdownParagraph,
+  img: MarkdownImg,
+  pre: MarkdownPre,
+};
 
 export interface MarkdownRendererProps {
   children: string;
@@ -64,54 +133,29 @@ export function MarkdownRenderer({
     [children, inline],
   );
 
+  const renderContextValue = useMemo<MarkdownRenderContextValue>(
+    () => ({ isDark: effectiveIsDark, presentationMode, inline }),
+    [effectiveIsDark, presentationMode, inline],
+  );
+
   const mergedComponents = useMemo<Components>(
-    () => ({
-      p: ({ node, children: pChildren, ...props }) => {
-        if (inline) {
-          return <span className="inline">{pChildren}</span>;
-        }
-        const onlyImage =
-          node?.children?.length === 1 &&
-          node.children[0].type === 'element' &&
-          (node.children[0] as { tagName?: string }).tagName === 'img';
-        return onlyImage ? <>{pChildren}</> : <p {...props}>{pChildren}</p>;
-      },
-      img: ({ src, alt }) => (
-        <MarkdownImage
-          src={src}
-          alt={alt}
-          isDark={effectiveIsDark}
-          presentationMode={presentationMode}
-        />
-      ),
-      pre: ({ children: preChildren, ...props }) => {
-        if (!inline) {
-          const mermaidCode = extractMermaidCode(preChildren);
-          if (mermaidCode !== null) {
-            return (
-              <MermaidDiagram
-                code={mermaidCode}
-                isDark={effectiveIsDark}
-                presentationMode={presentationMode}
-              />
-            );
-          }
-        }
-        return <pre {...props}>{preChildren}</pre>;
-      },
-      ...components,
-    }),
-    [inline, effectiveIsDark, presentationMode, components],
+    () =>
+      components
+        ? { ...DEFAULT_MARKDOWN_COMPONENTS, ...components }
+        : DEFAULT_MARKDOWN_COMPONENTS,
+    [components],
   );
 
   const markdownContent = (
-    <ReactMarkdown
-      remarkPlugins={markdownRemarkPlugins}
-      rehypePlugins={markdownRehypePlugins}
-      components={mergedComponents}
-    >
-      {processedContent}
-    </ReactMarkdown>
+    <MarkdownRenderContext.Provider value={renderContextValue}>
+      <ReactMarkdown
+        remarkPlugins={markdownRemarkPlugins}
+        rehypePlugins={markdownRehypePlugins}
+        components={mergedComponents}
+      >
+        {processedContent}
+      </ReactMarkdown>
+    </MarkdownRenderContext.Provider>
   );
 
   if (inline) {
