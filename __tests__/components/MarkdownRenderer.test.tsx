@@ -1,7 +1,8 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
 import { ThemeProvider } from '@/hooks/useTheme';
+import * as mermaidRenderer from '@/lib/mermaidRenderer';
 
 describe('MarkdownRenderer', () => {
   beforeEach(() => {
@@ -216,5 +217,67 @@ describe('MarkdownRenderer', () => {
     const { container } = render(<MarkdownRenderer>{markdown}</MarkdownRenderer>);
 
     expect(container.querySelector('.katex')).toBeInTheDocument();
+  });
+
+  it('does not invoke Mermaid renderer for markdown without mermaid blocks', () => {
+    const renderSpy = vi.spyOn(mermaidRenderer, 'renderMermaidDiagram');
+    try {
+      const markdown = 'Inline `mermaid` code.\n\n```ts\nconst ok = true;\n```';
+      const { container } = render(<MarkdownRenderer>{markdown}</MarkdownRenderer>);
+
+      expect(container.querySelector('pre code')).toHaveTextContent('const ok = true;');
+      expect(renderSpy).not.toHaveBeenCalled();
+    } finally {
+      renderSpy.mockRestore();
+    }
+  });
+
+  it('renders fenced mermaid blocks with synced theme and presentationMode without breaking sibling content on error', async () => {
+    const renderSpy = vi
+      .spyOn(mermaidRenderer, 'renderMermaidDiagram')
+      .mockImplementation(async (code: string, isDark: boolean) => {
+        if (code.includes('BROKEN')) {
+          throw new Error('Invalid diagram syntax');
+        }
+        return `<svg data-testid="mermaid-svg" data-dark="${String(isDark)}">${code}</svg>`;
+      });
+
+    try {
+      const markdown = [
+        '# Alur Belajar',
+        '',
+        '```mermaid',
+        'graph TD',
+        '  Mulai --> Selesai',
+        '```',
+        '',
+        '```mermaid',
+        'BROKEN DIAGRAM',
+        '```',
+        '',
+        'Paragraf penutup tetap tampil.',
+      ].join('\n');
+
+      const { container } = render(
+        <ThemeProvider defaultTheme="light">
+          <MarkdownRenderer isDark={true} presentationMode>
+            {markdown}
+          </MarkdownRenderer>
+        </ThemeProvider>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('mermaid-svg')).toBeInTheDocument();
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+      });
+
+      expect(screen.getByTestId('mermaid-svg')).toHaveAttribute('data-dark', 'true');
+      expect(container.querySelector('figure.mermaid-diagram')).toHaveClass('max-h-[55vh]');
+      expect(screen.getByText('Invalid diagram syntax')).toBeInTheDocument();
+      expect(screen.getByText('Paragraf penutup tetap tampil.')).toBeInTheDocument();
+      expect(renderSpy).toHaveBeenCalledTimes(2);
+    } finally {
+      renderSpy.mockRestore();
+    }
   });
 });

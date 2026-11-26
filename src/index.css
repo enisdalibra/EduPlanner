@@ -298,3 +298,10 @@
   text-rendering: auto;
 }
 
+/* Mermaid responsive SVG adjustments */
+.mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+

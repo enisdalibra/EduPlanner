@@ -1,10 +1,40 @@
 import React, { useMemo } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import { MarkdownImage } from '@/components/ui/MarkdownImage';
+import { MermaidDiagram } from '@/components/ui/MermaidDiagram';
 import { useIsDark } from '@/hooks/useTheme';
 import { markdownRemarkPlugins, markdownRehypePlugins } from '@/lib/markdownPlugins';
 import { preprocessMarkdown } from '@/lib/preprocessMarkdown';
 import { cn } from '@/lib/utils';
+
+const MERMAID_LANG_RE = /(?:^|\s)language-mermaid(?:\s|$)/i;
+
+function extractTextContent(node: React.ReactNode): string {
+  if (typeof node === 'string' || typeof node === 'number') {
+    return String(node);
+  }
+  if (Array.isArray(node)) {
+    return node.map(extractTextContent).join('');
+  }
+  return '';
+}
+
+function extractMermaidCode(preChildren: React.ReactNode): string | null {
+  const items = React.Children.toArray(preChildren);
+  if (items.length !== 1) return null;
+
+  const onlyChild = items[0];
+  if (!React.isValidElement<{ className?: string; children?: React.ReactNode }>(onlyChild)) {
+    return null;
+  }
+
+  const className = onlyChild.props.className;
+  if (typeof className !== 'string' || !MERMAID_LANG_RE.test(className)) {
+    return null;
+  }
+
+  return extractTextContent(onlyChild.props.children).replace(/\n$/, '');
+}
 
 export interface MarkdownRendererProps {
   children: string;
@@ -54,6 +84,21 @@ export function MarkdownRenderer({
           presentationMode={presentationMode}
         />
       ),
+      pre: ({ children: preChildren, ...props }) => {
+        if (!inline) {
+          const mermaidCode = extractMermaidCode(preChildren);
+          if (mermaidCode !== null) {
+            return (
+              <MermaidDiagram
+                code={mermaidCode}
+                isDark={effectiveIsDark}
+                presentationMode={presentationMode}
+              />
+            );
+          }
+        }
+        return <pre {...props}>{preChildren}</pre>;
+      },
       ...components,
     }),
     [inline, effectiveIsDark, presentationMode, components],

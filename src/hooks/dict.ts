@@ -718,6 +718,13 @@ export const dict = {
       loadExternal: "Muat gambar eksternal",
       blockedTitle: "Sumber gambar tidak aman dan tidak dapat dimuat"
     },
+    mermaid: {
+      loading: "Memuat diagram Mermaid...",
+      diagramLabel: "Diagram Mermaid",
+      errorTitle: "Diagram Mermaid tidak dapat dirender",
+      errorHint: "Periksa sintaks blok kode mermaid di bawah ini. Bagian dokumen lain tetap aman ditampilkan.",
+      emptyCode: "Blok diagram Mermaid masih kosong."
+    },
     scheduling: {
       tabSchedules: "Jadwal",
       addSchedule: "Tambah Jadwal",
@@ -1543,6 +1550,13 @@ export const dict = {
       externalDescription: "Loading this image contacts a third-party site and reveals your device IP address.",
       loadExternal: "Load external image",
       blockedTitle: "This unsafe image source cannot be loaded"
+    },
+    mermaid: {
+      loading: "Rendering Mermaid diagram...",
+      diagramLabel: "Mermaid diagram",
+      errorTitle: "Unable to render Mermaid diagram",
+      errorHint: "Check the Mermaid syntax below. Other parts of the document remain unaffected.",
+      emptyCode: "Mermaid diagram block is empty."
     },
     scheduling: {
       tabSchedules: "Schedule",

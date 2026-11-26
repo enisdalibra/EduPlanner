@@ -306,12 +306,12 @@ and transfer guidance, shared-device risks, and privacy-safe security reporting.
 
 ## Performance budgets
 
-Production builds regenerate a Material Symbols subset, lazy-load the Excel reader
-and writer only when their actions are requested, and enforce these limits:
+Production builds regenerate a Material Symbols subset, lazy-load the Excel reader/writer
+and Mermaid diagram renderer only when their features are used, and enforce these limits:
 
 - initial JavaScript: 750 KiB uncompressed;
-- any lazy JavaScript chunk: 500 KiB uncompressed;
-- total offline precache: 3.2 MiB.
+- any lazy JavaScript chunk: 1600 KiB uncompressed (accommodating Mermaid's on-demand layout engines);
+- total offline precache: 8.5 MiB (including offline Mermaid diagram chunks; see [ADR-0001](docs/adr/0001-offline-mermaid-rendering.md)).
 
 `npm run build` fails if a budget is exceeded or the generated service worker does
 not precache the application shell and all generated assets.

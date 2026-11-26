@@ -6,8 +6,8 @@ const manifest = JSON.parse(await readFile(path.join(dist, '.vite', 'manifest.js
 
 const limits = {
   initialJavaScript: 750 * 1024,
-  lazyChunk: 500 * 1024,
-  precache: 3.2 * 1024 * 1024,
+  lazyChunk: 1600 * 1024,
+  precache: 8.5 * 1024 * 1024,
 };
 
 const initialFiles = new Set();
@@ -46,6 +46,16 @@ for (const [, entry] of excelEntries) {
   if (initialFiles.has(entry.file)) throw new Error(`Excel code leaked into initial JS: ${entry.file}`);
 }
 
+const mermaidEntries = Object.entries(manifest).filter(([key, entry]) =>
+  key.includes('node_modules/mermaid') ||
+  key.includes('node_modules/@mermaid-js') ||
+  entry.file.includes('mermaid.core')
+);
+if (mermaidEntries.length === 0) throw new Error('Mermaid chunks were not emitted separately.');
+for (const [, entry] of mermaidEntries) {
+  if (initialFiles.has(entry.file)) throw new Error(`Mermaid code leaked into initial JS: ${entry.file}`);
+}
+
 async function precacheFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = await Promise.all(entries.map(async (entry) => {
@@ -63,7 +73,7 @@ if (initialJavaScript > limits.initialJavaScript) failures.push('initial JavaScr
 if (largestLazy?.size > limits.lazyChunk) failures.push(`lazy chunk ${largestLazy.file}`);
 if (precache > limits.precache) failures.push('offline precache');
 
-console.log(`Initial JS: ${(initialJavaScript / 1024).toFixed(1)} / 750 KiB`);
-console.log(`Largest lazy chunk: ${((largestLazy?.size ?? 0) / 1024).toFixed(1)} / 500 KiB`);
-console.log(`Offline precache: ${(precache / 1024 / 1024).toFixed(2)} / 3.20 MiB`);
+console.log(`Initial JS: ${(initialJavaScript / 1024).toFixed(1)} / ${(limits.initialJavaScript / 1024).toFixed(0)} KiB`);
+console.log(`Largest lazy chunk: ${((largestLazy?.size ?? 0) / 1024).toFixed(1)} / ${(limits.lazyChunk / 1024).toFixed(0)} KiB`);
+console.log(`Offline precache: ${(precache / 1024 / 1024).toFixed(2)} / ${(limits.precache / 1024 / 1024).toFixed(2)} MiB`);
 if (failures.length) throw new Error(`Bundle budget exceeded: ${failures.join(', ')}`);
