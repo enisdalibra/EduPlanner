@@ -18,14 +18,14 @@ function ecosystemBlock(ecosystem: string): string {
 }
 
 describe("Dependabot dependency maintenance", () => {
-  it("checks npm dependencies from the repository root every week", () => {
+  it("checks npm dependencies from the repository root every month", () => {
     const npm = ecosystemBlock("npm");
 
     expect(npm).toMatch(/^\s+directory: \/$/m);
-    expect(npm).toMatch(/^\s+interval: weekly$/m);
+    expect(npm).toMatch(/^\s+interval: monthly$/m);
     expect(npm).toMatch(/^\s+timezone: Asia\/Jakarta$/m);
     expect(npm).toMatch(/^\s+prefix: "chore\(deps\)"$/m);
-    expect(npm).toMatch(/^\s+open-pull-requests-limit: 10$/m);
+    expect(npm).toMatch(/^\s+open-pull-requests-limit: 5$/m);
   });
 
   it("groups routine production and development updates separately", () => {
@@ -44,7 +44,7 @@ describe("Dependabot dependency maintenance", () => {
     const actions = ecosystemBlock("github-actions");
 
     expect(actions).toMatch(/^\s+directory: \/$/m);
-    expect(actions).toMatch(/^\s+interval: weekly$/m);
+    expect(actions).toMatch(/^\s+interval: monthly$/m);
     expect(actions).toMatch(/^\s+prefix: "chore\(actions\)"$/m);
   });
 });

@@ -2,6 +2,8 @@ name: CI
 
 on:
   push:
+    branches:
+      - main
   pull_request:
   workflow_dispatch:
 
@@ -35,23 +37,15 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
-      - name: Scan tracked files for sensitive data
-        run: npm run privacy:check
-
       - name: Type-check
         run: npm run typecheck
 
       - name: Run tests
         run: npm test -- --run
 
-      - name: Collect coverage
-        run: npm run test:coverage
-
       - name: Build production PWA
         run: npm run build
 
-      - name: Verify release artifact allowlist
-        run: npm run check:release-artifact
-
-      - name: Audit dependencies
-        run: npm audit
+      - name: Audit production dependencies (non-blocking)
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=high

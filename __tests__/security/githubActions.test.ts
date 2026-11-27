@@ -52,6 +52,6 @@ describe('GitHub Actions supply-chain controls', () => {
     );
 
     expect(dependabot).toContain('package-ecosystem: github-actions');
-    expect(dependabot).toContain('interval: weekly');
+    expect(dependabot).toContain('interval: monthly');
   });
 });

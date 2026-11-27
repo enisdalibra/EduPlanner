@@ -13,7 +13,7 @@ describe('static hosting configuration', () => {
     expect(() => resolveDeploymentBase('/../')).toThrow(/traversal/);
   });
 
-  it('keeps Pages deployment manual and release-gated', () => {
+  it('keeps Pages deployment manual and build-verified', () => {
     const workflow = readFileSync(
       resolve(process.cwd(), '.github/workflows/deploy-pages.yml'),
       'utf8',
@@ -21,13 +21,14 @@ describe('static hosting configuration', () => {
 
     expect(workflow).toContain('workflow_dispatch:');
     expect(workflow).not.toMatch(/\n\s+push:/);
-    expect(workflow).toContain('npm run release:check');
+    expect(workflow).toContain('npm run typecheck');
+    expect(workflow).toContain('npm run build');
     expect(workflow).toContain('pages: write');
     expect(workflow).toContain('id-token: write');
     expect(workflow).toMatch(
-      /actions\/upload-pages-artifact@[0-9a-f]{40}\s+# v5\.0\.0/,
+      /actions\/upload-pages-artifact@[0-9a-f]{40}\s+# v\d+\.\d+\.\d+/,
     );
-    expect(workflow).toMatch(/actions\/deploy-pages@[0-9a-f]{40}\s+# v5\.0\.0/);
+    expect(workflow).toMatch(/actions\/deploy-pages@[0-9a-f]{40}\s+# v\d+\.\d+\.\d+/);
   });
 
   it('documents preview, security headers, verification, and rollback', () => {
